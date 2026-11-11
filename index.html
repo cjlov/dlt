@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 大乐透随机摇号器 · 极简摇奖</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #0b1a2e 0%, #1a2f3f 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+        .card {
+            max-width: 750px;
+            width: 100%;
+            background: rgba(22, 40, 58, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 3.5rem;
+            padding: 2.5rem 2rem 2.8rem;
+            box-shadow: 0 30px 45px -15px rgba(0, 0, 0, 0.7), inset 0 2px 5px rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            transition: all 0.2s;
+        }
+        h1 {
+            text-align: center;
+            font-weight: 600;
+            font-size: 2.3rem;
+            letter-spacing: 1px;
+            color: #ffd966;
+            text-shadow: 0 4px 12px rgba(255, 200, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-bottom: 0.5rem;
+        }
+        .subhead {
+            text-align: center;
+            color: #aac7db;
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 2.2rem;
+            letter-spacing: 0.8px;
+            opacity: 0.85;
+            border-bottom: 1px dashed rgba(255, 215, 0, 0.25);
+            padding-bottom: 1.2rem;
+        }
+        .lottery-area {
+            background: rgba(8, 20, 30, 0.7);
+            border-radius: 2.5rem;
+            padding: 2.2rem 1rem 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            box-shadow: inset 0 8px 18px rgba(0, 0, 0, 0.5), 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+        .front-zone-label, .back-zone-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 500;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #bdd4e8;
+            margin-bottom: 1rem;
+        }
+        .front-zone-label span, .back-zone-label span {
+            background: #0f2638;
+            padding: 0.2rem 1.2rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            font-size: 0.8rem;
+            color: #ffd966;
+        }
+        .balls-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.9rem;
+            margin-bottom: 1.5rem;
+            min-height: 4.5rem;
+        }
+        .ball {
+            width: 4.2rem;
+            height: 4.2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.7rem;
+            color: #1e2e3f;
+            background: #f5f9ff;
+            box-shadow: 0 8px 0 #0a121c, 0 12px 18px -4px rgba(0, 0, 0, 0.6), inset 0 -4px 6px rgba(0,0,0,0.2), inset 0 4px 6px rgba(255,255,255,0.8);
+            transition: all 0.15s;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+            border: 1px solid #d9e6f2;
+            line-height: 1;
+        }
+        .ball.front {
+            background: linear-gradient(145deg, #fdba3a, #f59e0b);
+            color: #1e1b0e;
+            box-shadow: 0 8px 0 #7a4e06, 0 12px 18px -4px #000000b3, inset 0 -4px 6px rgba(0,0,0,0.3), inset 0 4px 6px #ffe28c;
+            border-color: #ffe28c;
+        }
+        .ball.back {
+            background: linear-gradient(145deg, #5fa8d3, #3a7ca5);
+            color: #ffffff;
+            box-shadow: 0 8px 0 #1b3b4f, 0 12px 18px -4px #000000b3, inset 0 -4px 6px rgba(0,0,0,0.4), inset 0 4px 6px #b3d9f5;
+            border-color: #9ac9e8;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .empty-ball {
+            width: 4.2rem;
+            height: 4.2rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px dashed rgba(255, 215, 0, 0.3);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+            transition: 0.2s;
+        }
+        .separator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem 0 0.5rem;
+            font-weight: 300;
+            font-size: 1.2rem;
+            color: #6587a0;
+            letter-spacing: 3px;
+            gap: 20px;
+        }
+        .separator span {
+            background: #0e1f2b;
+            padding: 0.25rem 1.5rem;
+            border-radius: 100px;
+            border: 1px solid #ffd96640;
+            font-size: 0.8rem;
+            color: #ffd966b0;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.2rem;
+            margin-top: 1.8rem;
+        }
+        button {
+            border: none;
+            background: #1e2f3f;
+            padding: 1rem 2.2rem;
+            border-radius: 100px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 8px 0 #0b141e, 0 8px 18px rgba(0, 0, 0, 0.4);
+            color: #eef5fc;
+            letter-spacing: 0.8px;
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            flex: 1 0 auto;
+            min-width: 150px;
+        }
+        button:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #0b141e, 0 6px 12px rgba(0, 0, 0, 0.5);
+        }
+        .btn-primary {
+            background: linear-gradient(145deg, #f5b042, #d98c0e);
+            color: #1a1f0b;
+            box-shadow: 0 8px 0 #7d5409, 0 10px 25px #f0b52d40;
+            border-color: #ffd966;
+            font-weight: 700;
+            text-shadow: 0 1px 0 #ffe9b0;
+        }
+        .btn-primary:active {
+            box-shadow: 0 2px 0 #7d5409, 0 8px 18px #f0b52d30;
+        }
+        .btn-secondary {
+            background: #233a4b;
+            box-shadow: 0 8px 0 #0d1c26, 0 8px 18px rgba(0, 0, 0, 0.4);
+            color: #d6e8f5;
+        }
+        .btn-secondary:active {
+            box-shadow: 0 2px 0 #0d1c26, 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        .history-area {
+            margin-top: 1.8rem;
+            background: #0f1e2a80;
+            border-radius: 2rem;
+            padding: 1rem 1.2rem;
+            border: 1px solid #2b4a60;
+            backdrop-filter: blur(4px);
+        }
+        .history-title {
+            font-size: 0.8rem;
+            color: #8baec9;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .history-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem 1rem;
+            min-height: 2rem;
+            font-size: 0.9rem;
+            color: #bed9ed;
+            max-height: 70px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .history-item {
+            background: #1a3141;
+            border-radius: 50px;
+            padding: 0.3rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-left: 3px solid #ffd966;
+            font-weight: 400;
+            color: #e1f0fc;
+            font-size: 0.85rem;
+        }
+        .history-item .front-mini {
+            color: #fdba3a;
+            font-weight: 700;
+        }
+        .history-item .back-mini {
+            color: #80c0e8;
+            font-weight: 700;
+        }
+        .history-empty {
+            color: #516e85;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+        .clear-history {
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+            color: #6e8fa8;
+            border: 1px solid #3d5c72;
+            border-radius: 30px;
+            min-width: auto;
+            flex: 0;
+            margin-left: auto;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 400;
+            box-shadow: none;
+            letter-spacing: normal;
+        }
+        .clear-history:hover {
+            background: #1e3343;
+            color: #c9dcec;
+        }
+        .clear-history:active {
+            transform: none;
+            box-shadow: none;
+        }
+        .footer-note {
+            text-align: center;
+            color: #52758b;
+            font-size: 0.7rem;
+            margin-top: 1.2rem;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>
+            <span>🎲</span> 大乐透摇号 <span>🎰</span>
+        </h1>
+        <div class="subhead">前区 1–35 选5 · 后区 1–12 选2</div>
+
+        <div class="lottery-area">
+            <!-- 前区 -->
+            <div class="front-zone-label">
+                <span>前区 · 5个号码</span>
+            </div>
+            <div id="frontBalls" class="balls-container">
+                <!-- 动态生成5个空球占位 -->
+            </div>
+
+            <!-- 后区 -->
+            <div class="back-zone-label">
+                <span>后区 · 2个号码</span>
+            </div>
+            <div id="backBalls" class="balls-container">
+                <!-- 动态生成2个空球占位 -->
+            </div>
+
+            <div class="separator">
+                <span>⚡ 随机 · 公平 · 即时 ⚡</span>
+            </div>
+
+            <div class="actions">
+                <button id="drawBtn" class="btn-primary">
+                    🎲 摇 号
+                </button>
+                <button id="resetBtn" class="btn-secondary">
+                    🔄 重 置
+                </button>
+            </div>
+        </div>
+
+        <!-- 历史记录 -->
+        <div class="history-area">
+            <div class="history-title">
+                📋 最近摇号
+                <button id="clearHistoryBtn" class="clear-history" title="清空历史">清空</button>
+            </div>
+            <div id="historyList" class="history-list">
+                <span class="history-empty">还没有摇号记录</span>
+            </div>
+        </div>
+        <div class="footer-note">仅供娱乐 · 理性购彩</div>
+    </div>
+
+    <script>
+        (function() {
+            // ----- 常量配置 -----
+            const FRONT_TOTAL = 35;      // 前区 1-35
+            const FRONT_COUNT = 5;       // 选5个
+            const BACK_TOTAL = 12;       // 后区 1-12
+            const BACK_COUNT = 2;        // 选2个
+
+            // ----- DOM 元素 -----
+            const frontBallsDiv = document.getElementById('frontBalls');
+            const backBallsDiv = document.getElementById('backBalls');
+            const drawBtn = document.getElementById('drawBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const historyList = document.getElementById('historyList');
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+            // ----- 状态 -----
+            let currentFront = [];      // 当前前区号码 (升序)
+            let currentBack = [];       // 当前后区号码 (升序)
+            let history = [];           // 历史记录数组 [{front: [], back: []}, ...]
+
+            // ----- 工具函数 -----
+            // 随机整数 [min, max] 闭区间
+            function randomInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            // 从 1..total 中随机抽取 count 个不重复数字，返回升序数组
+            function drawUniqueNumbers(total, count) {
+                const pool = [];
+                for (let i = 1; i <= total; i++) {
+                    pool.push(i);
+                }
+                // Fisher–Yates 洗牌 (只洗前 count 个位置，效率足够)
+                for (let i = 0; i < count; i++) {
+                    const randomIndex = randomInt(i, total - 1);
+                    [pool[i], pool[randomIndex]] = [pool[randomIndex], pool[i]];
+                }
+                // 取前 count 个并排序
+                return pool.slice(0, count).sort((a, b) => a - b);
+            }
+
+            // 渲染球区 (前区或后区)
+            function renderBalls(container, numbers, type, placeholderCount) {
+                // 清空容器
+                container.innerHTML = '';
+
+                // 如果有号码，渲染号码球
+                if (numbers && numbers.length > 0) {
+                    numbers.forEach(num => {
+                        const ball = document.createElement('div');
+                        ball.className = `ball ${type}`;  // type: 'front' 或 'back'
+                        ball.textContent = num.toString().padStart(2, '0');
+                        container.appendChild(ball);
+                    });
+                } else {
+                    // 没有号码，渲染占位空球
+                    for (let i = 0; i < placeholderCount; i++) {
+                        const emptyBall = document.createElement('div');
+                        emptyBall.className = 'empty-ball';
+                        container.appendChild(emptyBall);
+                    }
+                }
+            }
+
+            // 根据当前号码更新界面上的球
+            function renderCurrentNumbers() {
+                // 前区：如果有号码，渲染球；否则显示5个空位
+                renderBalls(frontBallsDiv, currentFront, 'front', FRONT_COUNT);
+                // 后区：如果有号码，渲染球；否则显示2个空位
+                renderBalls(backBallsDiv, currentBack, 'back', BACK_COUNT);
+            }
+
+            // 渲染历史记录列表
+            function renderHistory() {
+                historyList.innerHTML = '';
+                if (history.length === 0) {
+                    historyList.innerHTML = '<span class="history-empty">还没有摇号记录</span>';
+                    return;
+                }
+
+                // 显示最近5条 (按时间从新到旧)
+                const recentHistory = history.slice(0, 5);
+                recentHistory.forEach(record => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+
+                    // 前区小标签
+                    const frontSpan = document.createElement('span');
+                    frontSpan.className = 'front-mini';
+                    frontSpan.textContent = record.front.map(n => n.toString().padStart(2, '0')).join(' ');
+                    
+                    // 后区小标签
+                    const backSpan = document.createElement('span');
+                    backSpan.className = 'back-mini';
+                    backSpan.textContent = record.back.map(n => n.toString().padStart(2, '0')).join(' ');
+
+                    // 组合: 前区 | 后区
+                    item.appendChild(frontSpan);
+                    item.appendChild(document.createTextNode(' + '));
+                    item.appendChild(backSpan);
+
+                    historyList.appendChild(item);
+                });
+            }
+
+            // 摇号核心逻辑
+            function performDraw() {
+                // 生成前区号码 (1-35 选5)
+                const newFront = drawUniqueNumbers(FRONT_TOTAL, FRONT_COUNT);
+                // 生成后区号码 (1-12 选2)
+                const newBack = drawUniqueNumbers(BACK_TOTAL, BACK_COUNT);
+
+                // 更新当前号码
+                currentFront = newFront;
+                currentBack = newBack;
+
+                // 更新界面球
+                renderCurrentNumbers();
+
+                // 保存历史记录 (新记录插入最前面)
+                history.unshift({
+                    front: [...newFront],
+                    back: [...newBack],
+                    timestamp: Date.now()
+                });
+
+                // 限制历史长度 (最多保留20条)
+                if (history.length > 20) {
+                    history = history.slice(0, 20);
+                }
+
+                // 刷新历史记录显示
+                renderHistory();
+            }
+
+            // 重置 (清空当前号码，保留历史记录)
+            function resetCurrent() {
+                currentFront = [];
+                currentBack = [];
+                renderCurrentNumbers();
+            }
+
+            // 清空历史记录
+            function clearHistory() {
+                history = [];
+                renderHistory();
+            }
+
+            // 初始化占位球 (无号码状态)
+            function initPlaceholders() {
+                // 前区5个空位
+                renderBalls(frontBallsDiv, [], 'front', FRONT_COUNT);
+                // 后区2个空位
+                renderBalls(backBallsDiv, [], 'back', BACK_COUNT);
+            }
+
+            // ----- 事件绑定 -----
+            drawBtn.addEventListener('click', performDraw);
+
+            resetBtn.addEventListener('click', resetCurrent);
+
+            clearHistoryBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                clearHistory();
+            });
+
+            // 页面加载时初始化
+            initPlaceholders();
+            // 历史记录空状态已经通过HTML显示，但为了统一，再调用一次renderHistory
+            renderHistory();
+        })();
+    </script>
+</body>
+</html>

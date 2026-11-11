@@ -7,8 +7,8 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: #121212;
-            color: #e0e0e0;
+            background: #141418; /* 高级深空灰 */
+            color: #fff;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
@@ -17,22 +17,22 @@
             overflow: hidden;
         }
         .header {
-            font-size: 1.4em;
-            font-weight: 600;
-            letter-spacing: 2px;
-            margin: 30px 0;
-            color: #fff;
-            text-transform: uppercase;
+            font-size: 1.5em;
+            font-weight: 800;
+            letter-spacing: 3px;
+            margin: 25px 0;
+            background: linear-gradient(90deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        /* 机器区域 */
         .machines-wrapper {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             justify-content: center;
             width: 100%;
-            padding: 0 15px;
-            max-width: 500px;
+            padding: 0 10px;
+            max-width: 480px;
         }
         .machine-box {
             display: flex;
@@ -41,21 +41,23 @@
             flex: 1;
         }
         .machine-label {
-            font-size: 1em;
-            margin-bottom: 15px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
             font-weight: 600;
-            color: #999;
-            letter-spacing: 1px;
+            color: #888;
         }
         
-        /* 玻璃质感滚筒 */
+        /* 高透玻璃罩 */
         .drum {
             width: 100%;
             aspect-ratio: 3/4;
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 60px 60px 15px 15px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 100%);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50px 50px 10px 10px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.03) 100%);
+            box-shadow: 
+                inset 0 0 20px rgba(255,255,255,0.05), 
+                inset -5px -5px 15px rgba(0,0,0,0.4),
+                0 15px 30px rgba(0,0,0,0.5);
             position: relative;
             overflow: hidden;
             display: flex;
@@ -64,52 +66,66 @@
             align-content: flex-start;
             padding: 15px 10px;
             gap: 6px;
-            backdrop-filter: blur(5px);
+        }
+        /* 玻璃反光 */
+        .drum::before {
+            content: '';
+            position: absolute;
+            top: 5%; left: 5%;
+            width: 25%; height: 90%;
+            background: linear-gradient(to right, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
         }
         
-        /* 机器内的小球 */
+        /* 机器里的球：大字号、高对比度 */
         .mini-ball {
-            width: 22px;
-            height: 22px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.6em;
-            font-weight: bold;
-            color: rgba(255,255,255,0.7);
-            background: #333;
-            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.5);
-            transition: all 0.3s;
+            font-size: 0.85em;
+            font-weight: 900;
+            color: #fff;
+            -webkit-text-stroke: 0.5px rgba(0,0,0,0.5);
+            background: radial-gradient(circle at 30% 30%, #ff4d4d, #b30000);
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.4), inset 2px 2px 4px rgba(255,255,255,0.6);
+        }
+        .mini-ball.blue-b { 
+            background: radial-gradient(circle at 30% 30%, #4da6ff, #005ce6);
         }
         
-        /* 翻滚动画（重力感） */
+        /* 模拟真实的重力翻滚 */
         .rolling .mini-ball {
-            animation: tumble 0.6s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+            animation: tumble 0.4s infinite alternate ease-in-out;
         }
-        .rolling .mini-ball:nth-child(even) { animation-duration: 0.45s; animation-delay: 0.1s; }
-        .rolling .mini-ball:nth-child(3n) { animation-duration: 0.7s; animation-delay: 0.2s; }
+        .rolling .mini-ball:nth-child(even) { animation-duration: 0.3s; animation-delay: 0.05s; }
+        .rolling .mini-ball:nth-child(3n) { animation-duration: 0.5s; animation-delay: 0.1s; }
         @keyframes tumble {
             0% { transform: translateY(0) rotate(0deg); }
-            100% { transform: translateY(140px) rotate(90deg); }
+            100% { transform: translateY(120px) rotate(180deg); }
         }
 
-        /* 吐球槽 */
+        /* 吐球盘 */
         .tray {
             width: 100%;
-            min-height: 45px;
-            background: #1a1a1a;
-            border: 1px solid #333;
+            min-height: 46px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 8px;
-            margin-top: 15px;
+            margin-top: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             padding: 5px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.8);
         }
         
-        /* 吐出的结果球 */
+        /* 落下的球 */
         .big-ball {
             width: 32px;
             height: 32px;
@@ -117,30 +133,31 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1em;
-            font-weight: bold;
+            font-size: 1.1em;
+            font-weight: 900;
             color: #fff;
-            background: #d32f2f;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 0 -2px 5px rgba(0,0,0,0.2);
+            -webkit-text-stroke: 1px rgba(0,0,0,0.4);
+            background: radial-gradient(circle at 30% 30%, #ff4d4d, #b30000);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 -2px 5px rgba(0,0,0,0.3);
             opacity: 0;
             transform: translateY(-20px);
         }
-        .big-ball.blue-b { background: #1976d2; }
+        .big-ball.blue-b { 
+            background: radial-gradient(circle at 30% 30%, #4da6ff, #005ce6);
+        }
         
-        /* 平滑落球 */
-        .big-ball.pop { animation: dropIn 0.4s ease-out forwards; }
+        .big-ball.pop { animation: dropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes dropIn {
             0% { opacity: 0; transform: translateY(-20px) scale(0.8); }
-            70% { transform: translateY(2px) scale(1); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* 全屏播报 - 玻璃拟态风格 */
+        /* 全屏大图播报 */
         #overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -148,44 +165,39 @@
             z-index: 100;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s;
+            transition: opacity 0.15s;
         }
         #overlay.show { opacity: 1; pointer-events: auto; }
         
         .broadcast-card {
-            background: rgba(30, 30, 30, 0.8);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 40px 60px;
-            border-radius: 20px;
             text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            transform: scale(0.9);
-            transition: transform 0.2s;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         #overlay.show .broadcast-card { transform: scale(1); }
         
-        .b-title { font-size: 1.2em; color: #999; margin-bottom: 10px; letter-spacing: 2px;}
-        .b-num { font-size: 4.5em; font-weight: 800; line-height: 1; }
-        .b-num.red { color: #ff5252; text-shadow: 0 0 20px rgba(255, 82, 82, 0.4); }
-        .b-num.blue { color: #448aff; text-shadow: 0 0 20px rgba(68, 138, 255, 0.4); }
+        .b-title { font-size: 1.2em; color: #aaa; margin-bottom: 10px; letter-spacing: 2px;}
+        .b-num { font-size: 7em; font-weight: 900; line-height: 1; -webkit-text-stroke: 2px rgba(0,0,0,0.3);}
+        .b-num.red { color: #ff3b3b; text-shadow: 0 0 40px rgba(255, 59, 59, 0.6); }
+        .b-num.blue { color: #3b8cff; text-shadow: 0 0 40px rgba(59, 140, 255, 0.6); }
 
         /* 按钮 */
         .btn {
-            margin-top: 40px;
-            padding: 16px 48px;
+            margin-top: 30px;
+            padding: 16px 50px;
             font-size: 1.1em;
-            font-weight: 600;
+            font-weight: 700;
             color: #fff;
-            background: #333;
-            border: 1px solid #444;
-            border-radius: 8px;
+            background: linear-gradient(180deg, #ff4d4d 0%, #b30000 100%);
+            border: none;
+            border-radius: 30px;
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: 0 10px 20px rgba(179, 0, 0, 0.4);
             letter-spacing: 1px;
         }
-        .btn:hover:not(:disabled) { background: #444; border-color: #666; }
-        .btn:active:not(:disabled) { transform: translateY(1px); }
-        .btn:disabled { color: #666; cursor: not-allowed; border-color: #222; }
+        .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 5px rgba(179, 0, 0, 0.4); }
+        .btn:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -206,9 +218,8 @@
         </div>
     </div>
 
-    <button class="btn" id="startBtn" onclick="startLiveDraw()">开始摇号</button>
+    <button class="btn" id="startBtn" onclick="startLiveDraw()">开启直播摇号</button>
 
-    <!-- 播报层 -->
     <div id="overlay">
         <div class="broadcast-card">
             <div class="b-title" id="bTitle">第 1 个号码</div>
@@ -218,33 +229,59 @@
 
     <script>
         let audioCtx;
+        let bgmOsc = null; // 背景音乐振荡器
+        let bgmInterval = null;
+
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         
-        // 更柔和的机械音效
-        function playSound(freq, duration, type = 'sine') {
+        // 通用音效播放
+        function playSound(freq, duration, type = 'sine', vol = 0.1) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
-        
-        function vibrate() { if (navigator.vibrate) navigator.vibrate(50); }
+
+        // 模拟开奖节目的紧张BGM（低频电子节拍）
+        function startBGM() {
+            if (!audioCtx || bgmInterval) return;
+            bgmInterval = setInterval(() => {
+                playSound(150, 0.1, 'triangle', 0.15); // 低音鼓点
+                playSound(300, 0.05, 'square', 0.05);  // 轻微滴答声
+            }, 200); // 200ms 一次，类似心跳节奏
+        }
+
+        function stopBGM() {
+            if (bgmInterval) {
+                clearInterval(bgmInterval);
+                bgmInterval = null;
+            }
+        }
+
+        function vibrate() { if (navigator.vibrate) navigator.vibrate(80); }
         const pad = (n) => n.toString().padStart(2, '0');
 
+        // 填充机器里的球（带清晰数字）
         function initDrums() {
             const drumRed = document.getElementById('drumRed');
             const drumBlue = document.getElementById('drumBlue');
             drumRed.innerHTML = ''; drumBlue.innerHTML = '';
-            // 填充暗色小球模拟机器里的球
-            for(let i=0; i<20; i++) drumRed.innerHTML += `<div class="mini-ball"></div>`;
-            for(let i=0; i<12; i++) drumBlue.innerHTML += `<div class="mini-ball"></div>`;
+            
+            for(let i=0; i<20; i++) {
+                let num = pad(Math.floor(Math.random() * 35) + 1);
+                drumRed.innerHTML += `<div class="mini-ball">${num}</div>`;
+            }
+            for(let i=0; i<12; i++) {
+                let num = pad(Math.floor(Math.random() * 12) + 1);
+                drumBlue.innerHTML += `<div class="mini-ball blue-b">${num}</div>`;
+            }
         }
         initDrums();
 
@@ -267,18 +304,20 @@
             bNum.className = `b-num ${isBlue ? 'blue' : 'red'}`;
             
             overlay.classList.add('show');
-            
-            // 播放清脆的定音
-            playSound(isBlue ? 1046.5 : 880, 0.3, 'triangle');
+            // 吐出号码时的清脆铃声
+            playSound(isBlue ? 1200 : 880, 0.4, 'sine', 0.3);
             vibrate();
             
-            await new Promise(r => setTimeout(r, 1000)); // 播报停留1秒
+            await new Promise(r => setTimeout(r, 1200));
             overlay.classList.remove('show');
             await new Promise(r => setTimeout(r, 150));
         }
 
         async function startLiveDraw() {
             initAudio();
+            // 部分手机浏览器需要用户交互后才允许播放声音，此时唤醒
+            if(audioCtx.state === 'suspended') { audioCtx.resume(); }
+
             const btn = document.getElementById('startBtn');
             const drumRed = document.getElementById('drumRed');
             const drumBlue = document.getElementById('drumBlue');
@@ -286,22 +325,20 @@
             const trayBlue = document.getElementById('trayBlue');
 
             btn.disabled = true;
-            btn.innerText = "摇号中...";
+            btn.innerText = "正在直播摇号...";
             trayRed.innerHTML = '';
             trayBlue.innerHTML = '';
 
             const redNums = getRandomNums(5, 35);
             const blueNums = getRandomNums(2, 12);
 
-            // --- 红球 ---
+            // --- 红球阶段 ---
+            startBGM(); // 开启紧张背景音
             drumRed.classList.add('rolling'); 
-            // 滚筒转动的机械噪音感（用低频音模拟）
-            playSound(120, 0.2, 'square');
-            await new Promise(r => setTimeout(r, 2000)); 
+            await new Promise(r => setTimeout(r, 2500)); 
 
             for (let i = 0; i < 5; i++) {
-                // 吐球声
-                playSound(300, 0.1, 'square');
+                playSound(400, 0.1, 'square', 0.2); // 吐球机械声
                 
                 const ballEl = document.createElement('div');
                 ballEl.className = 'big-ball pop';
@@ -312,15 +349,14 @@
             }
             drumRed.classList.remove('rolling');
 
-            await new Promise(r => setTimeout(r, 400));
+            await new Promise(r => setTimeout(r, 300));
 
-            // --- 蓝球 ---
+            // --- 蓝球阶段 ---
             drumBlue.classList.add('rolling');
-            playSound(120, 0.2, 'square');
             await new Promise(r => setTimeout(r, 1500));
 
             for (let i = 0; i < 2; i++) {
-                playSound(300, 0.1, 'square');
+                playSound(500, 0.1, 'square', 0.2);
                 
                 const ballEl = document.createElement('div');
                 ballEl.className = 'big-ball blue-b pop';
@@ -331,11 +367,18 @@
             }
             drumBlue.classList.remove('rolling');
 
+            // --- 结束 ---
+            stopBGM(); // 关闭背景音
             btn.disabled = false;
             btn.innerText = "再摇一次";
             
-            // 结束提示音
-            setTimeout(() => playSound(1318.5, 0.5, 'triangle'), 100);
+            // 播放欢呼/礼花音效（快速的高低音阶）
+            setTimeout(() => {
+                playSound(523.25, 0.2, 'triangle', 0.2); // C5
+                setTimeout(() => playSound(659.25, 0.2, 'triangle', 0.2), 150); // E5
+                setTimeout(() => playSound(783.99, 0.4, 'triangle', 0.2), 300); // G5
+                setTimeout(() => playSound(1046.5, 0.6, 'triangle', 0.3), 450); // C6
+            }, 100);
         }
     </script>
 </body>

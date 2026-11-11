@@ -3,181 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎰 大乐透自动摇号机</title>
+    <title>大乐透直播摇号</title>
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: radial-gradient(circle at center, #1a1a3a 0%, #0d0d1a 100%);
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             min-height: 100vh;
-            margin: 0;
             overflow: hidden;
         }
-        .title {
-            font-size: 2em;
-            font-weight: bold;
-            background: linear-gradient(90deg, #ff4e50, #f9d423);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 30px;
-            text-shadow: 0 0 20px rgba(255, 78, 80, 0.5);
-            animation: pulse 2s infinite;
+        .header {
+            font-size: 1.4em;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin: 30px 0;
+            color: #fff;
+            text-transform: uppercase;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+
+        /* 机器区域 */
+        .machines-wrapper {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            width: 100%;
+            padding: 0 15px;
+            max-width: 500px;
         }
-        .machine {
+        .machine-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        .machine-label {
+            font-size: 1em;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #999;
+            letter-spacing: 1px;
+        }
+        
+        /* 玻璃质感滚筒 */
+        .drum {
+            width: 100%;
+            aspect-ratio: 3/4;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 60px 60px 15px 15px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 100%);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            align-content: flex-start;
+            padding: 15px 10px;
+            gap: 6px;
+            backdrop-filter: blur(5px);
         }
-        .ball {
-            width: 60px;
-            height: 60px;
+        
+        /* 机器内的小球 */
+        .mini-ball {
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5em;
+            font-size: 0.6em;
             font-weight: bold;
-            color: #fff;
-            background: linear-gradient(135deg, #ff6b6b, #c0392b);
-            box-shadow: 0 10px 15px rgba(0,0,0,0.3), inset -5px -5px 15px rgba(0,0,0,0.3), inset 5px 5px 15px rgba(255,255,255,0.4);
-            transition: transform 0.1s;
-            position: relative;
+            color: rgba(255,255,255,0.7);
+            background: #333;
+            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.5);
+            transition: all 0.3s;
         }
-        .ball.blue {
-            background: linear-gradient(135deg, #74b9ff, #0984e3);
+        
+        /* 翻滚动画（重力感） */
+        .rolling .mini-ball {
+            animation: tumble 0.6s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .ball.rolling {
-            animation: roll 0.2s infinite;
-        }
-        @keyframes roll {
+        .rolling .mini-ball:nth-child(even) { animation-duration: 0.45s; animation-delay: 0.1s; }
+        .rolling .mini-ball:nth-child(3n) { animation-duration: 0.7s; animation-delay: 0.2s; }
+        @keyframes tumble {
             0% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(180deg); }
-            100% { transform: translateY(0) rotate(360deg); }
+            100% { transform: translateY(140px) rotate(90deg); }
         }
-        .btn {
-            padding: 15px 40px;
-            font-size: 1.2em;
+
+        /* 吐球槽 */
+        .tray {
+            width: 100%;
+            min-height: 45px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 5px;
+        }
+        
+        /* 吐出的结果球 */
+        .big-ball {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1em;
             font-weight: bold;
             color: #fff;
-            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-            border: none;
-            border-radius: 30px;
+            background: #d32f2f;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3), inset 0 -2px 5px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        .big-ball.blue-b { background: #1976d2; }
+        
+        /* 平滑落球 */
+        .big-ball.pop { animation: dropIn 0.4s ease-out forwards; }
+        @keyframes dropIn {
+            0% { opacity: 0; transform: translateY(-20px) scale(0.8); }
+            70% { transform: translateY(2px) scale(1); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* 全屏播报 - 玻璃拟态风格 */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        #overlay.show { opacity: 1; pointer-events: auto; }
+        
+        .broadcast-card {
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transform: scale(0.9);
+            transition: transform 0.2s;
+        }
+        #overlay.show .broadcast-card { transform: scale(1); }
+        
+        .b-title { font-size: 1.2em; color: #999; margin-bottom: 10px; letter-spacing: 2px;}
+        .b-num { font-size: 4.5em; font-weight: 800; line-height: 1; }
+        .b-num.red { color: #ff5252; text-shadow: 0 0 20px rgba(255, 82, 82, 0.4); }
+        .b-num.blue { color: #448aff; text-shadow: 0 0 20px rgba(68, 138, 255, 0.4); }
+
+        /* 按钮 */
+        .btn {
+            margin-top: 40px;
+            padding: 16px 48px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #fff;
+            background: #333;
+            border: 1px solid #444;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s;
+            letter-spacing: 1px;
         }
-        .btn:hover:not(:disabled) {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(245, 87, 108, 0.6);
-        }
-        .btn:active:not(:disabled) {
-            transform: translateY(0) scale(0.95);
-        }
-        .btn:disabled {
-            background: #555;
-            box-shadow: none;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
+        .btn:hover:not(:disabled) { background: #444; border-color: #666; }
+        .btn:active:not(:disabled) { transform: translateY(1px); }
+        .btn:disabled { color: #666; cursor: not-allowed; border-color: #222; }
     </style>
 </head>
 <body>
 
-    <div class="title">🎰 大乐透自动摇号机 🎰</div>
+    <div class="header">大乐透直播摇奖</div>
 
-    <div class="machine" id="machine">
-        <!-- 前区 5 个红球 -->
-        <div class="ball" id="r1">?</div>
-        <div class="ball" id="r2">?</div>
-        <div class="ball" id="r3">?</div>
-        <div class="ball" id="r4">?</div>
-        <div class="ball" id="r5">?</div>
-        <!-- 后区 2 个蓝球 -->
-        <div class="ball blue" id="b1">?</div>
-        <div class="ball blue" id="b2">?</div>
+    <div class="machines-wrapper">
+        <div class="machine-box">
+            <div class="machine-label">前区红球</div>
+            <div class="drum" id="drumRed"></div>
+            <div class="tray" id="trayRed"></div>
+        </div>
+        
+        <div class="machine-box">
+            <div class="machine-label">后区蓝球</div>
+            <div class="drum" id="drumBlue"></div>
+            <div class="tray" id="trayBlue"></div>
+        </div>
     </div>
 
-    <button class="btn" id="startBtn" onclick="startDraw()">开始摇号</button>
+    <button class="btn" id="startBtn" onclick="startLiveDraw()">开始摇号</button>
+
+    <!-- 播报层 -->
+    <div id="overlay">
+        <div class="broadcast-card">
+            <div class="b-title" id="bTitle">第 1 个号码</div>
+            <div class="b-num" id="bNum">00</div>
+        </div>
+    </div>
 
     <script>
-        const redBalls = ['r1', 'r2', 'r3', 'r4', 'r5'];
-        const blueBalls = ['b1', 'b2'];
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        // 更柔和的机械音效
+        function playSound(freq, duration, type = 'sine') {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function vibrate() { if (navigator.vibrate) navigator.vibrate(50); }
+        const pad = (n) => n.toString().padStart(2, '0');
 
-        // 生成不重复的随机数
-        function getRandomNumbers(count, max, exclude = []) {
+        function initDrums() {
+            const drumRed = document.getElementById('drumRed');
+            const drumBlue = document.getElementById('drumBlue');
+            drumRed.innerHTML = ''; drumBlue.innerHTML = '';
+            // 填充暗色小球模拟机器里的球
+            for(let i=0; i<20; i++) drumRed.innerHTML += `<div class="mini-ball"></div>`;
+            for(let i=0; i<12; i++) drumBlue.innerHTML += `<div class="mini-ball"></div>`;
+        }
+        initDrums();
+
+        function getRandomNums(count, max) {
             let nums = [];
             while (nums.length < count) {
                 let num = Math.floor(Math.random() * max) + 1;
-                if (!nums.includes(num) && !exclude.includes(num)) {
-                    nums.push(num);
-                }
+                if (!nums.includes(num)) nums.push(num);
             }
             return nums.sort((a, b) => a - b);
         }
 
-        // 补零
-        function pad(num) {
-            return num.toString().padStart(2, '0');
+        async function showOverlay(index, num, isBlue) {
+            const overlay = document.getElementById('overlay');
+            const bTitle = document.getElementById('bTitle');
+            const bNum = document.getElementById('bNum');
+            
+            bTitle.innerText = isBlue ? `后区第 ${index} 个` : `前区第 ${index} 个`;
+            bNum.innerText = pad(num);
+            bNum.className = `b-num ${isBlue ? 'blue' : 'red'}`;
+            
+            overlay.classList.add('show');
+            
+            // 播放清脆的定音
+            playSound(isBlue ? 1046.5 : 880, 0.3, 'triangle');
+            vibrate();
+            
+            await new Promise(r => setTimeout(r, 1000)); // 播报停留1秒
+            overlay.classList.remove('show');
+            await new Promise(r => setTimeout(r, 150));
         }
 
-        function startDraw() {
+        async function startLiveDraw() {
+            initAudio();
             const btn = document.getElementById('startBtn');
-            const allBalls = document.querySelectorAll('.ball');
-            
+            const drumRed = document.getElementById('drumRed');
+            const drumBlue = document.getElementById('drumBlue');
+            const trayRed = document.getElementById('trayRed');
+            const trayBlue = document.getElementById('trayBlue');
+
             btn.disabled = true;
             btn.innerText = "摇号中...";
-            allBalls.forEach(ball => ball.classList.add('rolling'));
+            trayRed.innerHTML = '';
+            trayBlue.innerHTML = '';
 
-            let ticks = 0;
-            const maxTicks = 30;
+            const redNums = getRandomNums(5, 35);
+            const blueNums = getRandomNums(2, 12);
 
-            // 数字滚动特效
-            const interval = setInterval(() => {
-                ticks++;
-                redBalls.forEach(id => {
-                    document.getElementById(id).innerText = pad(Math.floor(Math.random() * 35) + 1);
-                });
-                blueBalls.forEach(id => {
-                    document.getElementById(id).innerText = pad(Math.floor(Math.random() * 12) + 1);
-                });
+            // --- 红球 ---
+            drumRed.classList.add('rolling'); 
+            // 滚筒转动的机械噪音感（用低频音模拟）
+            playSound(120, 0.2, 'square');
+            await new Promise(r => setTimeout(r, 2000)); 
 
-                if (ticks >= maxTicks) {
-                    clearInterval(interval);
-                    allBalls.forEach(ball => ball.classList.remove('rolling'));
+            for (let i = 0; i < 5; i++) {
+                // 吐球声
+                playSound(300, 0.1, 'square');
+                
+                const ballEl = document.createElement('div');
+                ballEl.className = 'big-ball pop';
+                ballEl.innerText = pad(redNums[i]);
+                trayRed.appendChild(ballEl);
+                
+                await showOverlay(i + 1, redNums[i], false);
+            }
+            drumRed.classList.remove('rolling');
 
-                    const redResult = getRandomNumbers(5, 35);
-                    const blueResult = getRandomNumbers(2, 12);
+            await new Promise(r => setTimeout(r, 400));
 
-                    redBalls.forEach((id, index) => {
-                        document.getElementById(id).innerText = pad(redResult[index]);
-                    });
-                    blueBalls.forEach((id, index) => {
-                        document.getElementById(id).innerText = pad(blueResult[index]);
-                    });
+            // --- 蓝球 ---
+            drumBlue.classList.add('rolling');
+            playSound(120, 0.2, 'square');
+            await new Promise(r => setTimeout(r, 1500));
 
-                    btn.disabled = false;
-                    btn.innerText = "再摇一次";
-                }
-            }, 50);
+            for (let i = 0; i < 2; i++) {
+                playSound(300, 0.1, 'square');
+                
+                const ballEl = document.createElement('div');
+                ballEl.className = 'big-ball blue-b pop';
+                ballEl.innerText = pad(blueNums[i]);
+                trayBlue.appendChild(ballEl);
+                
+                await showOverlay(i + 1, blueNums[i], true);
+            }
+            drumBlue.classList.remove('rolling');
+
+            btn.disabled = false;
+            btn.innerText = "再摇一次";
+            
+            // 结束提示音
+            setTimeout(() => playSound(1318.5, 0.5, 'triangle'), 100);
         }
     </script>
 </body>

@@ -233,12 +233,13 @@
 
     <script>
         let audioCtx;
-        let rollInterval = null; 
+        let bgmInterval = null;
 
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         
+        // 核心音效
         function playSound(freq, duration, type = 'sine', vol = 0.2) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -251,20 +252,28 @@
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
 
-        // 替换为柔和的白噪音模拟“沙沙”晃动声，不再刺耳
-        function startRollSound() {
-            if (rollInterval) clearInterval(rollInterval);
-            rollInterval = setInterval(() => {
-                // 随机发出清脆的球碰撞声，类似弹珠在盒子里轻轻碰撞
-                const randFreq = 300 + Math.random() * 400;
-                playSound(randFreq, 0.08, 'sine', 0.08);
-            }, 80); 
+        // 专属BGM（保留之前的音乐）
+        function startBGM() {
+            if (bgmInterval) return;
+            let step = 0;
+            const notes = [
+                261.63, 261.63, 329.63, 329.63, 
+                392.00, 392.00, 329.63, 329.63, 
+            ];
+            bgmInterval = setInterval(() => {
+                let freq = notes[step % notes.length];
+                playSound(freq, 0.1, 'triangle', 0.05); 
+                if (step % 4 === 0) {
+                    playSound(80, 0.2, 'sine', 0.1);
+                }
+                step++;
+            }, 200);
         }
 
-        function stopRollSound() {
-            if (rollInterval) {
-                clearInterval(rollInterval);
-                rollInterval = null;
+        function stopBGM() {
+            if (bgmInterval) {
+                clearInterval(bgmInterval);
+                bgmInterval = null;
             }
         }
 
@@ -339,14 +348,13 @@
 
             // --- 前区红球 ---
             drumRed.classList.add('rolling'); 
-            startRollSound(); 
+            startBGM(); 
             await new Promise(r => setTimeout(r, 3000)); 
 
             for (let i = 0; i < 5; i++) {
-                // 替换为“管子滚落”的清脆连击音效：先高音后低音（类似哒-咚）
-                playSound(850, 0.1, 'sine', 0.2);
-                setTimeout(() => playSound(400, 0.1, 'triangle', 0.2), 100);
-
+                // 重点：替换成清脆的“咔哒”声，模拟弹珠碰撞出球
+                playSound(1046.5, 0.05, 'square', 0.15); // 高频咔哒
+                setTimeout(() => playSound(523.25, 0.1, 'sine', 0.2), 50); // 落地闷响
                 vibrate();
                 
                 const dropBall = document.createElement('div');
@@ -365,19 +373,16 @@
                 await new Promise(r => setTimeout(r, 1200));
             }
             drumRed.classList.remove('rolling');
-            stopRollSound(); 
 
             await new Promise(r => setTimeout(r, 500));
 
             // --- 后区蓝球 ---
             drumBlue.classList.add('rolling');
-            startRollSound(); 
             await new Promise(r => setTimeout(r, 2500));
 
             for (let i = 0; i < 2; i++) {
-                playSound(850, 0.1, 'sine', 0.2);
-                setTimeout(() => playSound(400, 0.1, 'triangle', 0.2), 100);
-
+                playSound(1200, 0.05, 'square', 0.15);
+                setTimeout(() => playSound(600, 0.1, 'sine', 0.2), 50);
                 vibrate();
                 
                 const dropBall = document.createElement('div');
@@ -396,14 +401,18 @@
                 await new Promise(r => setTimeout(r, 1200));
             }
             drumBlue.classList.remove('rolling');
-            stopRollSound();
+
+            stopBGM(); 
+
+            setTimeout(() => playSound(523.25, 0.2, 'sine', 0.2), 100);
+            setTimeout(() => playSound(659.25, 0.2, 'sine', 0.2), 300);
+            setTimeout(() => playSound(783.99, 0.2, 'sine', 0.2), 500);
+            setTimeout(() => playSound(1046.50, 0.5, 'sine', 0.3), 700);
 
             addHistoryRecord(redNums, blueNums);
 
             btn.disabled = false;
             btn.innerText = "再摇一次";
-            setTimeout(() => playSound(1046.5, 0.5, 'sine'), 100);
-            setTimeout(() => playSound(1318.5, 0.8, 'sine'), 200);
         }
     </script>
 </body>

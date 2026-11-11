@@ -51,8 +51,9 @@
             position: absolute; top: 0; left: 0;
             display: flex; justify-content: center; align-items: center;
         }
+        /* 加速旋转：从 1.5s 变成 0.6s，转出残影 */
         .rolling .ball-container {
-            animation: rotateDrum 1.5s linear infinite;
+            animation: rotateDrum 0.6s linear infinite;
         }
         @keyframes rotateDrum {
             0% { transform: rotate(0deg); }
@@ -118,7 +119,6 @@
             100% { opacity: 1; transform: translateX(-50%) translateY(45px) scale(1); }
         }
 
-        /* 下方开奖框 */
         .tray-box { width: 100%; max-width: 480px; margin-top: 20px; padding: 0 15px; z-index: 10;}
         .tray {
             width: 100%; min-height: 60px; background: #000;
@@ -148,7 +148,6 @@
         }
         .btn:disabled { background: #333; color: #666; box-shadow: none; }
 
-        /* 历史记录面板 */
         .history-panel {
             width: 100%; max-width: 480px;
             margin-top: 40px;
@@ -227,35 +226,61 @@
 
     <button class="btn" id="startBtn" onclick="startLiveDraw()">开始直播摇奖</button>
 
-    <!-- 历史记录 -->
     <div class="history-panel">
         <div class="history-title">历史开奖记录</div>
         <div class="history-list" id="historyList">
-            <!-- 历史记录会动态插入这里 -->
             <div style="text-align: center; color: #555; font-size: 0.9em; margin-top: 10px;">暂无记录，快去摇奖吧</div>
         </div>
     </div>
 
     <script>
         let audioCtx;
+        let rollInterval = null; // 用于保存滚筒滚动的声音定时器
+
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-        function playSound(freq, duration, type = 'sine') {
+        
+        // 播放单次音效
+        function playSound(freq, duration, type = 'sine', vol = 0.2) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
+
+        // 开启滚筒碰撞噪音（低频轰隆 + 随机哒哒声）
+        function startRollSound() {
+            if (rollInterval) clearInterval(rollInterval);
+            rollInterval = setInterval(() => {
+                // 随机产生低频碰撞和摩擦声
+                const randFreq = 100 + Math.random() * 200;
+                const randVol = 0.05 + Math.random() * 0.05;
+                playSound(randFreq, 0.05, 'triangle', randVol);
+                
+                // 偶尔来一下清脆的撞击
+                if (Math.random() > 0.6) {
+                    playSound(600 + Math.random() * 400, 0.02, 'square', 0.02);
+                }
+            }, 50); // 每50毫秒发出一阵声音
+        }
+
+        // 关闭噪音
+        function stopRollSound() {
+            if (rollInterval) {
+                clearInterval(rollInterval);
+                rollInterval = null;
+            }
+        }
+
         function vibrate() { if (navigator.vibrate) navigator.vibrate(50); }
         const pad = (n) => n.toString().padStart(2, '0');
 
-        // 初始化滚筒
         function initDrums() {
             const containers = document.querySelectorAll('.ball-container');
             containers.forEach((container, index) => {
@@ -280,17 +305,14 @@
             return nums.sort((a, b) => a - b);
         }
 
-        // 添加历史记录
         function addHistoryRecord(reds, blues) {
             const list = document.getElementById('historyList');
-            // 移除“暂无记录”提示
             if (list.innerText.includes('暂无记录')) {
                 list.innerHTML = '';
             }
-
             const now = new Date();
             const timeStr = `${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const issueNum = `第 ${Math.floor(Math.random() * 9000) + 1000} 期`; // 随机生成个期号
+            const issueNum = `第 ${Math.floor(Math.random() * 9000) + 1000} 期`;
 
             const item = document.createElement('div');
             item.className = 'history-item';
@@ -306,8 +328,6 @@
                 </div>
                 <div class="history-balls">${ballsHtml}</div>
             `;
-
-            // 插入到最上面
             list.insertBefore(item, list.firstChild);
         }
 
@@ -327,8 +347,9 @@
             const redNums = getRandomNums(5, 35);
             const blueNums = getRandomNums(2, 12);
 
-            // 前区
+            // --- 前区红球 ---
             drumRed.classList.add('rolling'); 
+            startRollSound(); // 开启机器翻滚轰鸣声
             await new Promise(r => setTimeout(r, 2500)); 
 
             for (let i = 0; i < 5; i++) {
@@ -352,11 +373,13 @@
                 await new Promise(r => setTimeout(r, 1200));
             }
             drumRed.classList.remove('rolling');
+            stopRollSound(); // 停止红球噪音
 
             await new Promise(r => setTimeout(r, 500));
 
-            // 后区
+            // --- 后区蓝球 ---
             drumBlue.classList.add('rolling');
+            startRollSound(); // 开启蓝球噪音
             await new Promise(r => setTimeout(r, 2000));
 
             for (let i = 0; i < 2; i++) {
@@ -380,8 +403,8 @@
                 await new Promise(r => setTimeout(r, 1200));
             }
             drumBlue.classList.remove('rolling');
+            stopRollSound();
 
-            // 记录历史
             addHistoryRecord(redNums, blueNums);
 
             btn.disabled = false;

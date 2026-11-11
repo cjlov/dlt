@@ -29,7 +29,6 @@
         }
         .machine-label { font-size: 0.9em; color: #8892b0; margin-bottom: 15px; }
         
-        /* 滚筒玻璃罩 */
         .drum-wrapper {
             position: relative;
             width: 100%;
@@ -51,9 +50,8 @@
             position: absolute; top: 0; left: 0;
             display: flex; justify-content: center; align-items: center;
         }
-        /* 加速旋转：从 1.5s 变成 0.6s，转出残影 */
         .rolling .ball-container {
-            animation: rotateDrum 0.6s linear infinite;
+            animation: rotateDrum 0.5s linear infinite;
         }
         @keyframes rotateDrum {
             0% { transform: rotate(0deg); }
@@ -235,13 +233,12 @@
 
     <script>
         let audioCtx;
-        let rollInterval = null; // 用于保存滚筒滚动的声音定时器
+        let rollInterval = null; 
 
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         
-        // 播放单次音效
         function playSound(freq, duration, type = 'sine', vol = 0.2) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -254,23 +251,16 @@
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
 
-        // 开启滚筒碰撞噪音（低频轰隆 + 随机哒哒声）
+        // 替换为柔和的白噪音模拟“沙沙”晃动声，不再刺耳
         function startRollSound() {
             if (rollInterval) clearInterval(rollInterval);
             rollInterval = setInterval(() => {
-                // 随机产生低频碰撞和摩擦声
-                const randFreq = 100 + Math.random() * 200;
-                const randVol = 0.05 + Math.random() * 0.05;
-                playSound(randFreq, 0.05, 'triangle', randVol);
-                
-                // 偶尔来一下清脆的撞击
-                if (Math.random() > 0.6) {
-                    playSound(600 + Math.random() * 400, 0.02, 'square', 0.02);
-                }
-            }, 50); // 每50毫秒发出一阵声音
+                // 随机发出清脆的球碰撞声，类似弹珠在盒子里轻轻碰撞
+                const randFreq = 300 + Math.random() * 400;
+                playSound(randFreq, 0.08, 'sine', 0.08);
+            }, 80); 
         }
 
-        // 关闭噪音
         function stopRollSound() {
             if (rollInterval) {
                 clearInterval(rollInterval);
@@ -349,11 +339,14 @@
 
             // --- 前区红球 ---
             drumRed.classList.add('rolling'); 
-            startRollSound(); // 开启机器翻滚轰鸣声
-            await new Promise(r => setTimeout(r, 2500)); 
+            startRollSound(); 
+            await new Promise(r => setTimeout(r, 3000)); 
 
             for (let i = 0; i < 5; i++) {
-                playSound(300, 0.2, 'triangle');
+                // 替换为“管子滚落”的清脆连击音效：先高音后低音（类似哒-咚）
+                playSound(850, 0.1, 'sine', 0.2);
+                setTimeout(() => playSound(400, 0.1, 'triangle', 0.2), 100);
+
                 vibrate();
                 
                 const dropBall = document.createElement('div');
@@ -367,23 +360,24 @@
                     resultBall.className = 'result-ball pop';
                     resultBall.innerText = pad(redNums[i]);
                     tray.appendChild(resultBall);
-                    playSound(800, 0.2, 'sine');
                 }, 600);
 
                 await new Promise(r => setTimeout(r, 1200));
             }
             drumRed.classList.remove('rolling');
-            stopRollSound(); // 停止红球噪音
+            stopRollSound(); 
 
             await new Promise(r => setTimeout(r, 500));
 
             // --- 后区蓝球 ---
             drumBlue.classList.add('rolling');
-            startRollSound(); // 开启蓝球噪音
-            await new Promise(r => setTimeout(r, 2000));
+            startRollSound(); 
+            await new Promise(r => setTimeout(r, 2500));
 
             for (let i = 0; i < 2; i++) {
-                playSound(400, 0.2, 'triangle');
+                playSound(850, 0.1, 'sine', 0.2);
+                setTimeout(() => playSound(400, 0.1, 'triangle', 0.2), 100);
+
                 vibrate();
                 
                 const dropBall = document.createElement('div');
@@ -397,7 +391,6 @@
                     resultBall.className = 'result-ball blue-b pop';
                     resultBall.innerText = pad(blueNums[i]);
                     tray.appendChild(resultBall);
-                    playSound(900, 0.2, 'sine'); 
                 }, 600);
 
                 await new Promise(r => setTimeout(r, 1200));

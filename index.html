@@ -77,14 +77,13 @@ body{min-height:100vh;background:#080c18;color:#fff;font-family:system-ui;displa
 
 <script>
 const pad=n=>String(n).padStart(2,"0");
-// 浏览器密码级真随机
+
 const cryptoRand=(max)=>{
   const arr=new Uint32Array(1);
   crypto.getRandomValues(arr);
   return Math.floor(arr[0]/(0xFFFFFFFF+1)*max)+1;
 };
 
-// 从数组里面随机抽取一个元素，用于摇奖
 const pickRandom=(arr)=>{
   const idx=cryptoRand(arr.length)-1;
   const item=arr[idx];
@@ -98,28 +97,29 @@ function createBall(layerId,num,isRed){
   b.className="mini-ball "+(isRed?"red":"blue");
   b.textContent=pad(num);
   l.appendChild(b);
-  return {el:b,x:50+(cryptoRand(36)-18),y:50+(cryptoRand(36)-18),vx:(cryptoRand(12)-6)/10,vy:(cryptoRand(12)-6)/10,num};
+  return {el:b,num,angle:cryptoRand(628)/100,radius:22+(num%6)};
 }
 
-// 真实惯性滚动，无剧烈抖动
+// 加快旋转：前区先摇，后区再摇
 function rollLoop(list){
   let alive=true;
   const f=()=>{
     if(!alive) return;
     for(const b of list){
-      // 微小扰动，保留惯性，不会乱飘
-      b.vx += (Math.random()-0.5)*0.045;
-      b.vy += (Math.random()-0.5)*0.045;
-      const s=Math.hypot(b.vx,b.vy);
-      if(s>1.25){b.vx=(b.vx/s)*1.25;b.vy=(b.vy/s)*1.25}
-      b.x+=b.vx;b.y+=b.vy;
+      const speed=0.028+b.num*0.0005;
+      b.angle+=speed;
+      const cx=50,cy=50;
+      let x=cx+Math.cos(b.angle)*b.radius;
+      let y=cy+Math.sin(b.angle)*b.radius;
+      x+=(Math.random()-0.5)*0.4;
+      y+=(Math.random()-0.5)*0.4;
       const edge=12;
-      if(b.x<edge){b.x=edge;b.vx=Math.abs(b.vx)*0.93}
-      if(b.x>100-edge){b.x=100-edge;b.vx=-Math.abs(b.vx)*0.93}
-      if(b.y<edge){b.y=edge;b.vy=Math.abs(b.vy)*0.93}
-      if(b.y>100-edge){b.y=100-edge;b.vy=-Math.abs(b.vy)*0.93}
-      b.el.style.left=b.x+"%";
-      b.el.style.top=b.y+"%";
+      if(x<edge)x=edge;
+      if(x>100-edge)x=100-edge;
+      if(y<edge)y=edge;
+      if(y>100-edge)y=100-edge;
+      b.el.style.left=x+"%";
+      b.el.style.top=y+"%";
     }
     requestAnimationFrame(f);
   };
@@ -129,7 +129,7 @@ function rollLoop(list){
 
 let audioCtx=null;
 function initAudio(){if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)}
-// 厚重落球音效，贴近真实开奖
+
 function playDropTone(isRed){
   if(!audioCtx)return;
   const o=audioCtx.createOscillator();
@@ -165,17 +165,13 @@ async function draw(){
   document.getElementById("redLayer").innerHTML="";
   document.getElementById("blueLayer").innerHTML="";
 
-  // 真实规则：红球全部35颗，蓝球全部12颗全部放入滚筒
   const redPool=[];
   for(let i=1;i<=35;i++) redPool.push(createBall("redLayer",i,true));
   const bluePool=[];
   for(let i=1;i<=12;i++) bluePool.push(createBall("blueLayer",i,false));
 
-  const stopR=rollLoop(redPool);
-  const stopB=rollLoop(bluePool);
-
-  const resR=[],resB=[];
-  // 从筒内现存球随机抽取5个红球
+  const stopRed=rollLoop(redPool);
+  const resR=[];
   for(let i=0;i<5;i++){
     const hit=pickRandom(redPool);
     hit.el.style.opacity=0;
@@ -186,7 +182,10 @@ async function draw(){
     await new Promise(x=>setTimeout(x,1100+cryptoRand(200)));
     rd.className="drop-ball red";
   }
-  // 抽取2个蓝球
+  stopRed();
+
+  const stopBlue=rollLoop(bluePool);
+  const resB=[];
   for(let i=0;i<2;i++){
     const hit=pickRandom(bluePool);
     hit.el.style.opacity=0;
@@ -197,7 +196,8 @@ async function draw(){
     await new Promise(x=>setTimeout(x,1100+cryptoRand(200)));
     bd.className="drop-ball blue";
   }
-  stopR();stopB();
+  stopBlue();
+
   document.getElementById("redLayer").innerHTML="";
   document.getElementById("blueLayer").innerHTML="";
   saveHis(resR,resB);

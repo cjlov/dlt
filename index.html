@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大乐透电视直播摇奖</title>
+    <title>超级大乐透‑修复版模拟摇奖</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -59,28 +59,15 @@
         }
 
         .mini-ball {
-            width: 24px; height: 24px; border-radius: 50%;
+            width: 22px; height: 22px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 0.75em; font-weight: bold; color: #fff;
+            font-size: 0.7em; font-weight: bold; color: #fff;
             position: absolute;
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b);
             box-shadow: inset -2px -2px 4px rgba(0,0,0,0.5);
         }
         .mini-ball.blue-b { background: radial-gradient(circle at 30% 30%, #74b9ff, #0984e3); }
         
-        .mini-ball:nth-child(1) { top: 10%; left: 20%; }
-        .mini-ball:nth-child(2) { top: 20%; right: 15%; }
-        .mini-ball:nth-child(3) { bottom: 30%; right: 20%; }
-        .mini-ball:nth-child(4) { bottom: 15%; left: 30%; }
-        .mini-ball:nth-child(5) { top: 40%; left: 10%; }
-        .mini-ball:nth-child(6) { top: 50%; right: 10%; }
-        .mini-ball:nth-child(7) { bottom: 40%; left: 15%; }
-        .mini-ball:nth-child(8) { top: 15%; left: 50%; transform: translateX(-50%); }
-        .mini-ball:nth-child(9) { bottom: 10%; left: 50%; transform: translateX(-50%); }
-        .mini-ball:nth-child(10) { top: 35%; left: 35%; }
-        .mini-ball:nth-child(11) { top: 55%; right: 35%; }
-        .mini-ball:nth-child(12) { top: 5%; right: 40%; }
-
         .pipe {
             position: absolute;
             bottom: -20px;
@@ -124,7 +111,7 @@
             display: flex; align-items: center; gap: 10px; padding: 10px 15px;
             position: relative;
         }
-        .tray::before { content: '当前开奖结果'; position: absolute; top: -10px; left: 10px; font-size: 0.7em; color: #5c7cfa; background: #0d111a; padding: 0 5px; }
+        .tray::before { content: '当前开奖结果（按出球顺序）'; position: absolute; top: -10px; left: 10px; font-size: 0.7em; color: #5c7cfa; background: #0d111a; padding: 0 5px; }
         
         .result-ball {
             width: 38px; height: 38px; border-radius: 50%;
@@ -195,11 +182,11 @@
 </head>
 <body>
 
-    <div class="header">超级大乐透</div>
+    <div class="header">超级大乐透‑修复版模拟摇奖</div>
 
     <div class="machines-wrapper">
         <div class="machine-box">
-            <div class="machine-label">前区红球</div>
+            <div class="machine-label">前区红球（1‑35）</div>
             <div class="drum-wrapper">
                 <div class="drum" id="drumRed">
                     <div class="ball-container"></div>
@@ -208,7 +195,7 @@
             </div>
         </div>
         <div class="machine-box">
-            <div class="machine-label">后区蓝球</div>
+            <div class="machine-label">后区蓝球（1‑12）</div>
             <div class="drum-wrapper">
                 <div class="drum" id="drumBlue">
                     <div class="ball-container"></div>
@@ -234,12 +221,12 @@
     <script>
         let audioCtx;
         let bgmInterval = null;
+        let issueSerial = 1; // 自增期号，不再随机
 
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         
-        // 核心音效
         function playSound(freq, duration, type = 'sine', vol = 0.2) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -252,7 +239,6 @@
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
 
-        // 专属BGM（保留之前的音乐）
         function startBGM() {
             if (bgmInterval) return;
             let step = 0;
@@ -280,6 +266,24 @@
         function vibrate() { if (navigator.vibrate) navigator.vibrate(50); }
         const pad = (n) => n.toString().padStart(2, '0');
 
+        // ✅ 密码学安全随机数
+        function cryptoRand(max){
+            const arr = new Uint32Array(1);
+            window.crypto.getRandomValues(arr);
+            const r = arr[0] / (0xFFFFFFFF + 1);
+            return Math.floor(r * max) + 1;
+        }
+
+        // ✅ 单次随机抽取一个不重复号码
+        function pickOne(exist, max){
+            let num;
+            do{
+                num = cryptoRand(max);
+            }while(exist.includes(num));
+            return num;
+        }
+
+        // ✅ 每次摇奖前重新刷新滚筒内的球
         function initDrums() {
             const containers = document.querySelectorAll('.ball-container');
             containers.forEach((container, index) => {
@@ -287,21 +291,12 @@
                 const isBlue = index === 1;
                 const maxNum = isBlue ? 12 : 35;
                 const cls = isBlue ? 'mini-ball blue-b' : 'mini-ball';
-                for(let i=0; i<12; i++) {
-                    let num = pad(Math.floor(Math.random() * maxNum) + 1);
+                // 随机生成14颗球用于滚筒动画展示
+                for(let i=0; i<14; i++) {
+                    let num = pad(cryptoRand(maxNum));
                     container.innerHTML += `<div class="${cls}">${num}</div>`;
                 }
             });
-        }
-        initDrums();
-
-        function getRandomNums(count, max) {
-            let nums = [];
-            while (nums.length < count) {
-                let num = Math.floor(Math.random() * max) + 1;
-                if (!nums.includes(num)) nums.push(num);
-            }
-            return nums.sort((a, b) => a - b);
         }
 
         function addHistoryRecord(reds, blues) {
@@ -311,7 +306,7 @@
             }
             const now = new Date();
             const timeStr = `${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const issueNum = `第 ${Math.floor(Math.random() * 9000) + 1000} 期`;
+            const issueNum = `第 ${issueSerial++} 期`;
 
             const item = document.createElement('div');
             item.className = 'history-item';
@@ -342,63 +337,74 @@
             btn.disabled = true;
             btn.innerText = "摇奖中...";
             tray.innerHTML = ''; 
+            initDrums(); // 每次开奖刷新滚筒小球
 
-            const redNums = getRandomNums(5, 35);
-            const blueNums = getRandomNums(2, 12);
+            let redResult = [];
+            let blueResult = [];
 
-            // --- 前区红球 ---
+            // --- 前区红球，边摇边实时随机出号，不再预先算好 ---
             drumRed.classList.add('rolling'); 
             startBGM(); 
-            await new Promise(r => setTimeout(r, 3000)); 
+            // 前置摇晃时间随机
+            await new Promise(r => setTimeout(r, 2200 + cryptoRand(1200))); 
 
             for (let i = 0; i < 5; i++) {
-                // 重点：替换成清脆的“咔哒”声，模拟弹珠碰撞出球
-                playSound(1046.5, 0.05, 'square', 0.15); // 高频咔哒
-                setTimeout(() => playSound(523.25, 0.1, 'sine', 0.2), 50); // 落地闷响
+                // ✅ 摇到这一刻，才现场随机选出下一颗球
+                const nextBall = pickOne(redResult,35);
+                redResult.push(nextBall);
+
+                playSound(1046.5, 0.05, 'square', 0.15);
+                setTimeout(() => playSound(523.25, 0.1, 'sine', 0.2), 50);
                 vibrate();
                 
                 const dropBall = document.createElement('div');
                 dropBall.className = 'output-ball drop';
-                dropBall.innerText = pad(redNums[i]);
+                dropBall.innerText = pad(nextBall);
                 drumRed.parentElement.appendChild(dropBall);
 
                 setTimeout(() => {
                     dropBall.remove(); 
                     const resultBall = document.createElement('div');
                     resultBall.className = 'result-ball pop';
-                    resultBall.innerText = pad(redNums[i]);
+                    resultBall.innerText = pad(nextBall);
                     tray.appendChild(resultBall);
                 }, 600);
 
-                await new Promise(r => setTimeout(r, 1200));
+                // ✅ 每颗球掉落间隔随机，不再固定
+                const wait = 900 + cryptoRand(700);
+                await new Promise(r => setTimeout(r, wait));
             }
             drumRed.classList.remove('rolling');
 
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 400 + cryptoRand(400)));
 
-            // --- 后区蓝球 ---
+            // --- 后区蓝球，同样实时随机抽取 ---
             drumBlue.classList.add('rolling');
-            await new Promise(r => setTimeout(r, 2500));
+            await new Promise(r => setTimeout(r, 2000 + cryptoRand(1000)));
 
             for (let i = 0; i < 2; i++) {
+                const nextBall = pickOne(blueResult,12);
+                blueResult.push(nextBall);
+
                 playSound(1200, 0.05, 'square', 0.15);
                 setTimeout(() => playSound(600, 0.1, 'sine', 0.2), 50);
                 vibrate();
                 
                 const dropBall = document.createElement('div');
                 dropBall.className = 'output-ball blue-b drop';
-                dropBall.innerText = pad(blueNums[i]);
+                dropBall.innerText = pad(nextBall);
                 drumBlue.parentElement.appendChild(dropBall);
 
                 setTimeout(() => {
                     dropBall.remove();
                     const resultBall = document.createElement('div');
                     resultBall.className = 'result-ball blue-b pop';
-                    resultBall.innerText = pad(blueNums[i]);
+                    resultBall.innerText = pad(nextBall);
                     tray.appendChild(resultBall);
                 }, 600);
 
-                await new Promise(r => setTimeout(r, 1200));
+                const wait = 900 + cryptoRand(600);
+                await new Promise(r => setTimeout(r, wait));
             }
             drumBlue.classList.remove('rolling');
 
@@ -409,11 +415,14 @@
             setTimeout(() => playSound(783.99, 0.2, 'sine', 0.2), 500);
             setTimeout(() => playSound(1046.50, 0.5, 'sine', 0.3), 700);
 
-            addHistoryRecord(redNums, blueNums);
+            addHistoryRecord(redResult, blueResult);
 
             btn.disabled = false;
             btn.innerText = "再摇一次";
         }
+
+        // 页面首次初始化滚筒
+        initDrums();
     </script>
 </body>
 </html>

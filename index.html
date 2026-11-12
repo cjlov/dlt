@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>超级大乐透-无序翻滚仿真摇奖</title>
+<title>超级大乐透‑撞击乱滚仿真摇奖</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -78,7 +78,6 @@ body {
     max-width: 160px;
 }
 
-/* 滚筒本体：不再整体旋转 */
 .drum {
     position: absolute;
     inset: 0;
@@ -92,7 +91,6 @@ body {
     overflow: hidden;
 }
 
-/* 球层：每个球自己动，不再跟着轨道公转 */
 .ball-layer {
     position: absolute;
     inset: 0;
@@ -115,6 +113,7 @@ body {
         inset 2px 2px 4px rgba(255,255,255,0.4),
         0 0 8px rgba(255,255,255,0.15);
     will-change: transform, left, top;
+    transition: none;
 }
 .mini-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
 .mini-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #6aa8ff, #1967d2); }
@@ -278,8 +277,8 @@ body {
 
 <body>
 <div class="top-tags">
-    <div class="tag">前区红球 1-35</div>
-    <div class="tag">后区蓝球 1-12</div>
+    <div class="tag">前区红球 1‑35</div>
+    <div class="tag">后区蓝球 1‑12</div>
 </div>
 
 <div class="machine-container">
@@ -341,22 +340,17 @@ function pickOne(exist, max) {
     return num;
 }
 
-// 每颗球独立运动状态
 function createMiniBalls(layerId, maxNum, count, isBlue) {
     const layer = document.getElementById(layerId);
     layer.innerHTML = "";
-
     const balls = [];
-
     for (let i = 0; i < count; i++) {
         const ball = document.createElement("div");
         ball.className = "mini-ball " + (isBlue ? "blue-ball" : "red-ball");
         const num = cryptoRand(maxNum);
         ball.textContent = pad(num);
         ball.dataset.num = num;
-
         layer.appendChild(ball);
-
         balls.push({
             el: ball,
             x: 50 + (Math.random() - 0.5) * 40,
@@ -366,60 +360,63 @@ function createMiniBalls(layerId, maxNum, count, isBlue) {
             size: 20
         });
     }
-
     return balls;
 }
 
-// 无序翻滚核心：每个球自己更新位置
+// 撞击抖动运动核心
 function startChaosRoll(balls) {
     let rafId = null;
     let lastTime = performance.now();
-
     function step(now) {
         const dt = Math.min(50, now - lastTime);
         lastTime = now;
-
         balls.forEach(b => {
-            // 随机扰动方向，模拟气流碰撞
-            b.vx += (Math.random() - 0.5) * 0.08;
-            b.vy += (Math.random() - 0.5) * 0.08;
-
+            // 随机突发猛变向，模拟碰撞
+            if(Math.random() < 0.07){
+                b.vx += (Math.random()-0.5)*0.75;
+                b.vy += (Math.random()-0.5)*0.75;
+            }
+            // 持续微弱扰动
+            b.vx += (Math.random()-0.5)*0.04;
+            b.vy += (Math.random()-0.5)*0.04;
             // 速度上限
             const speed = Math.hypot(b.vx, b.vy);
-            if (speed > 1.1) {
-                b.vx = (b.vx / speed) * 1.1;
-                b.vy = (b.vy / speed) * 1.1;
+            if(speed > 1.4){
+                b.vx = (b.vx / speed) * 1.4;
+                b.vy = (b.vy / speed) * 1.4;
             }
-
-            // 低频随机加速，模拟突然跳动
-            if (Math.random() < 0.04) {
-                b.vx += (Math.random() - 0.5) * 0.4;
-                b.vy += (Math.random() - 0.5) * 0.4;
-            }
-
             b.x += b.vx;
             b.y += b.vy;
-
-            // 边界反弹
             const r = 12;
-            if (b.x < r) { b.x = r; b.vx = Math.abs(b.vx); }
-            if (b.x > 100 - r) { b.x = 100 - r; b.vx = -Math.abs(b.vx); }
-            if (b.y < r) { b.y = r; b.vy = Math.abs(b.vy); }
-            if (b.y > 100 - r) { b.y = 100 - r; b.vy = -Math.abs(b.vy); }
-
+            // 撞壁反弹+撞击瞬间膨胀
+            if (b.x < r) {
+                b.x = r;
+                b.vx = -Math.abs(b.vx) * 0.88;
+                b.el.style.transform = `translate(${(b.x-50)*2}%,${(b.y-50)*2}%) scale(1.08)`;
+            }else if (b.x > 100 - r) {
+                b.x = 100 - r;
+                b.vx = -Math.abs(b.vx) * 0.88;
+                b.el.style.transform = `translate(${(b.x-50)*2}%,${(b.y-50)*2}%) scale(1.08)`;
+            }else if (b.y < r) {
+                b.y = r;
+                b.vy = -Math.abs(b.vy) * 0.88;
+                b.el.style.transform = `translate(${(b.x-50)*2}%,${(b.y-50)*2}%) scale(1.08)`;
+            }else if (b.y > 100 - r) {
+                b.y = 100 - r;
+                b.vy = -Math.abs(b.vy) * 0.88;
+                b.el.style.transform = `translate(${(b.x-50)*2}%,${(b.y-50)*2}%) scale(1.08)`;
+            }else{
+                b.el.style.transform = `translate(${(b.x-50)*2}%,${(b.y-50)*2}%) scale(1)`;
+            }
             b.el.style.left = b.x + "%";
             b.el.style.top = b.y + "%";
         });
-
         rafId = requestAnimationFrame(step);
     }
-
     rafId = requestAnimationFrame(step);
-
     return () => cancelAnimationFrame(rafId);
 }
 
-// 音频
 let audioCtx = null, rumbleNode = null;
 function ensureAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -458,7 +455,6 @@ function playDropSound(isBlue) {
     osc.stop(audioCtx.currentTime + 0.12);
 }
 
-// 历史记录
 let issueSerial = 1;
 function addHistory(reds, blues) {
     const list = document.getElementById("historyList");
@@ -476,35 +472,27 @@ function addHistory(reds, blues) {
 
 async function startDraw() {
     ensureAudio();
-
     const btn = document.getElementById("startBtn");
     const resultBalls = document.getElementById("resultBalls");
     const redDropBall = document.getElementById("redDropBall");
     const blueDropBall = document.getElementById("blueDropBall");
-
     btn.disabled = true;
     btn.textContent = "摇奖中...";
     resultBalls.innerHTML = "";
 
-    // 初始化前后区小球
     const redBalls = createMiniBalls("redBallLayer", 35, 13, false);
     const blueBalls = createMiniBalls("blueBallLayer", 12, 9, true);
 
-    // 前后区同时开始无序翻滚
     const stopRed = startChaosRoll(redBalls);
     const stopBlue = startChaosRoll(blueBalls);
-
     startRumble();
 
     const redResult = [];
     const blueResult = [];
 
-    // 前区一颗一颗滚出
     for (let i = 0; i < 5; i++) {
         const n = pickOne(redResult, 35);
         redResult.push(n);
-
-        // 找到对应球并消失
         const match = redBalls.find(b => Number(b.el.dataset.num) === n);
         if (match) {
             match.el.style.transition = "opacity 0.35s, transform 0.35s";
@@ -516,29 +504,23 @@ async function startDraw() {
                 if (idx > -1) redBalls.splice(idx, 1);
             }, 350);
         }
-
         redDropBall.textContent = pad(n);
         redDropBall.classList.remove("dropping");
         void redDropBall.offsetWidth;
         redDropBall.classList.add("dropping");
-
         playDropSound(false);
-
         setTimeout(() => {
             const b = document.createElement("div");
             b.className = "result-ball red-ball show";
             b.textContent = pad(n);
             resultBalls.appendChild(b);
         }, 320);
-
         await new Promise(r => setTimeout(r, 850 + cryptoRand(600)));
     }
 
-    // 后区一颗一颗滚出
     for (let i = 0; i < 2; i++) {
         const n = pickOne(blueResult, 12);
         blueResult.push(n);
-
         const match = blueBalls.find(b => Number(b.el.dataset.num) === n);
         if (match) {
             match.el.style.transition = "opacity 0.35s, transform 0.35s";
@@ -550,31 +532,24 @@ async function startDraw() {
                 if (idx > -1) blueBalls.splice(idx, 1);
             }, 350);
         }
-
         blueDropBall.textContent = pad(n);
         blueDropBall.classList.remove("dropping");
         void blueDropBall.offsetWidth;
         blueDropBall.classList.add("dropping");
-
         playDropSound(true);
-
         setTimeout(() => {
             const b = document.createElement("div");
             b.className = "result-ball blue-ball show";
             b.textContent = pad(n);
             resultBalls.appendChild(b);
         }, 320);
-
         await new Promise(r => setTimeout(r, 800 + cryptoRand(550)));
     }
 
-    // 全部出完后停止翻滚
     stopRed();
     stopBlue();
     stopRumble();
-
     addHistory(redResult, blueResult);
-
     btn.disabled = false;
     btn.textContent = "再摇一次";
 }

@@ -1,282 +1,583 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>超级大乐透‑真实仿真摇奖</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            min-height: 100vh; display: flex; flex-direction: column; align-items: center;
-            padding: 20px 12px 40px;
-            background: radial-gradient(circle at 20% 10%, rgba(255, 215, 0, 0.18), transparent 26%), radial-gradient(circle at 80% 20%, rgba(255, 90, 90, 0.16), transparent 28%), radial-gradient(circle at 50% 90%, rgba(0, 120, 255, 0.18), transparent 36%), linear-gradient(180deg, #05070d 0%, #0c1222 45%, #080c18 100%);
-            color: #fff; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; position: relative; overflow-x: hidden;
-        }
-        .top-tags { width: 100%; max-width: 420px; display: flex; justify-content: space-between; gap: 10px; margin-bottom: 14px; z-index: 2; }
-        .tag { flex: 1; text-align: center; padding: 7px 10px; border-radius: 999px; font-size: 13px; letter-spacing: 2px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 215, 0, 0.35); color: #ffd86b; }
-        .machine-container { width: 100%; max-width: 420px; display: flex; justify-content: space-between; gap: 14px; margin-bottom: 24px; z-index: 2; }
-        .machine { flex: 1; background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 24px; padding: 14px 10px 18px; display: flex; flex-direction: column; align-items: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 10px 30px rgba(0, 0, 0, 0.45); }
-        .machine-title { font-size: 14px; color: #ffd86b; letter-spacing: 4px; margin-bottom: 12px; }
-        .drum-wrap { position: relative; width: 100%; aspect-ratio: 1/1; max-width: 160px; }
-        .drum { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 25%, rgba(255,255,255,0.14), transparent 35%), radial-gradient(circle at 65% 85%, rgba(0,0,0,0.6), transparent 45%), linear-gradient(145deg, #1f2a44 0%, #07090f 100%); border: 2px solid rgba(255, 255, 255, 0.18); box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.8), 0 0 0 6px rgba(255, 215, 0, 0.08), 0 12px 24px rgba(0, 0, 0, 0.35); overflow: hidden; }
-        .ball-track { position: absolute; inset:0; border-radius:50%; transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .mini-ball { position: absolute; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: #fff; box-shadow: inset -3px -3px 6px rgba(0,0,0,0.5), inset 2px 2px 4px rgba(255,255,255,0.4), 0 0 8px rgba(255,255,255,0.15); transition: opacity 0.4s ease, transform 0.4s ease; }
-        .mini-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
-        .mini-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #63a8ff, #194790); }
-        .pipe { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); width: 26px; height: 55px; background: linear-gradient(180deg, #ffd86b, #ff9500); border-radius: 14px; z-index: 3; box-shadow: 0 4px 10px rgba(255, 149, 0, 0.45); }
-        .drop-zone { position: absolute; bottom: -42px; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; z-index: 4; }
-        .drop-ball { position: absolute; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; color: #fff; opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.7); }
-        .drop-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
-        .drop-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #63a8ff, #194790); }
-        .drop-ball.dropping { animation: dropBall 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        @keyframes dropBall { 0% { opacity: 1; transform: translateX(-50%) translateY(-20px) scale(0.7); } 60% { opacity: 1; transform: translateX(-50%) translateY(10px) scale(1.15); } 100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
-        .result-board { width: 100%; max-width: 420px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 215, 0, 0.25); border-radius: 22px; padding: 16px; margin-bottom: 18px; z-index: 2; }
-        .result-title { text-align: center; font-size: 13px; letter-spacing: 3px; color: #ffd86b; margin-bottom: 12px; }
-        .result-balls { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 54px; }
-        .result-ball { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #fff; opacity: 0; transform: scale(0.4); box-shadow: inset -4px -4px 8px rgba(0,0,0,0.5), inset 3px 3px 6px rgba(255,255,255,0.3), 0 0 12px rgba(255,255,255,0.15); }
-        .result-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
-        .result-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #63a8ff, #194790); }
-        .result-ball.show { animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        @keyframes popIn { to { opacity: 1; transform: scale(1); } }
-        .btn { width: 100%; max-width: 420px; padding: 14px; border: none; border-radius: 999px; font-size: 18px; font-weight: bold; letter-spacing: 6px; color: #fff; cursor: pointer; background: linear-gradient(90deg, #ff9500, #ff2d55, #ff9500); background-size: 200% 100%; box-shadow: 0 8px 20px rgba(255, 45, 85, 0.45), 0 0 0 1px rgba(255,255,255,0.08); z-index: 2; transition: background-position 0.4s; }
-        .btn:disabled { background: #444; box-shadow: none; cursor: not-allowed; }
-        .history-panel { width: 100%; max-width: 420px; margin-top: 24px; z-index: 2; }
-        .history-title { font-size: 14px; color: #ffd86b; letter-spacing: 3px; margin-bottom: 10px; padding-left: 10px; border-left: 4px solid #ffd86b; }
-        .history-list { display: flex; flex-direction: column; gap: 10px; }
-        .history-item { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 12px; }
-        .history-info { display: flex; justify-content: space-between; font-size: 12px; color: #b0bed9; margin-bottom: 8px; }
-        .history-balls { display: flex; gap: 8px; flex-wrap: wrap; }
-        .h-ball { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; color: #fff; }
-        .h-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
-        .h-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #63a8ff, #194790); }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>超级大乐透-无序翻滚仿真摇奖</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px 40px;
+    background:
+        radial-gradient(circle at 20% 10%, rgba(255, 215, 0, 0.18), transparent 26%),
+        radial-gradient(circle at 80% 20%, rgba(255, 90, 90, 0.16), transparent 28%),
+        radial-gradient(circle at 50% 90%, rgba(0, 120, 255, 0.18), transparent 36%),
+        linear-gradient(180deg, #05070d 0%, #0c1222 45%, #080c18 100%);
+    color: #fff;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.top-tags {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+    z-index: 2;
+}
+.tag {
+    flex: 1;
+    text-align: center;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 215, 0, 0.35);
+    color: #ffd86b;
+}
+
+.machine-container {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 24px;
+    z-index: 2;
+}
+.machine {
+    flex: 1;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    padding: 14px 10px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.machine-title {
+    font-size: 14px;
+    color: #ffd86b;
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+}
+
+.drum-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1/1;
+    max-width: 160px;
+}
+
+/* 滚筒本体：不再整体旋转 */
+.drum {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 35% 25%, rgba(255,255,255,0.14), transparent 35%),
+        radial-gradient(circle at 65% 85%, rgba(0,0,0,0.6), transparent 45%),
+        linear-gradient(145deg, #1f2a44 0%, #07090f 100%);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.8), 0 0 0 6px rgba(255, 215, 0, 0.08), 0 12px 24px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+/* 球层：每个球自己动，不再跟着轨道公转 */
+.ball-layer {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+}
+
+.mini-ball {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff;
+    box-shadow:
+        inset -3px -3px 6px rgba(0,0,0,0.5),
+        inset 2px 2px 4px rgba(255,255,255,0.4),
+        0 0 8px rgba(255,255,255,0.15);
+    will-change: transform, left, top;
+}
+.mini-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
+.mini-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #6aa8ff, #1967d2); }
+
+.pipe {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 26px;
+    height: 55px;
+    background: linear-gradient(180deg, #ffd86b, #ff9500);
+    border-radius: 14px;
+    z-index: 3;
+    box-shadow: 0 4px 10px rgba(255, 149, 0, 0.45);
+}
+
+.drop-zone {
+    position: absolute;
+    bottom: -42px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 28px;
+    z-index: 4;
+}
+.drop-ball {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px) scale(0.7);
+}
+.drop-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
+.drop-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #6aa8ff, #1967d2); }
+.drop-ball.dropping { animation: dropBall 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes dropBall {
+    0% { opacity: 1; transform: translateX(-50%) translateY(-20px) scale(0.7); }
+    60% { opacity: 1; transform: translateX(-50%) translateY(10px) scale(1.15); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.result-board {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 215, 0, 0.25);
+    border-radius: 22px;
+    padding: 16px;
+    margin-bottom: 18px;
+    z-index: 2;
+}
+.result-title {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: #ffd86b;
+    margin-bottom: 12px;
+}
+.result-balls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-height: 54px;
+}
+.result-ball {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    opacity: 0;
+    transform: scale(0.4);
+    box-shadow:
+        inset -4px -4px 8px rgba(0,0,0,0.5),
+        inset 3px 3px 6px rgba(255,255,255,0.35),
+        0 0 12px rgba(255,255,255,0.15);
+}
+.result-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
+.result-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #6aa8ff, #1967d2); }
+.result-ball.show { animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+@keyframes popIn { to { opacity: 1; transform: scale(1); } }
+
+.btn {
+    width: 100%;
+    max-width: 420px;
+    padding: 14px;
+    border: none;
+    border-radius: 999px;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 6px;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(90deg, #ff9500, #ff2d55, #ff9500);
+    background-size: 200% 100%;
+    box-shadow: 0 8px 20px rgba(255, 45, 85, 0.45), 0 0 0 1px rgba(255,255,255,0.08) inset;
+    z-index: 2;
+    transition: background-position 0.4s;
+}
+.btn:hover { background-position: 100% 0; }
+.btn:disabled { background: #444; box-shadow: none; cursor: not-allowed; }
+
+.history-panel {
+    width: 100%;
+    max-width: 420px;
+    margin-top: 24px;
+    z-index: 2;
+}
+.history-title {
+    font-size: 14px;
+    color: #ffd86b;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    border-left: 4px solid #ffd86b;
+}
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 12px;
+}
+.history-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #b0bed9;
+    margin-bottom: 8px;
+}
+.history-balls { display: flex; gap: 8px; flex-wrap: wrap; }
+.h-ball {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+}
+.h-ball.red-ball { background: radial-gradient(circle at 30% 30%, #ff7676, #c0392b); }
+.h-ball.blue-ball { background: radial-gradient(circle at 30% 30%, #6aa8ff, #1967d2); }
+</style>
 </head>
+
 <body>
-    <div class="top-tags">
-        <div class="tag">前区红球 1‑35</div>
-        <div class="tag">后区蓝球 1‑12</div>
-    </div>
-    <div class="machine-container">
-        <div class="machine">
-            <div class="machine-title">前区</div>
-            <div class="drum-wrap">
-                <div class="drum" id="redDrum"><div class="ball-track" id="redBallContainer"></div></div>
-                <div class="pipe"></div>
-                <div class="drop-zone"><div class="drop-ball red-ball" id="redDropBall"></div></div>
+<div class="top-tags">
+    <div class="tag">前区红球 1-35</div>
+    <div class="tag">后区蓝球 1-12</div>
+</div>
+
+<div class="machine-container">
+    <div class="machine">
+        <div class="machine-title">前区</div>
+        <div class="drum-wrap">
+            <div class="drum" id="redDrum">
+                <div class="ball-layer" id="redBallLayer"></div>
             </div>
-        </div>
-        <div class="machine">
-            <div class="machine-title">后区</div>
-            <div class="drum-wrap">
-                <div class="drum" id="blueDrum"><div class="ball-track" id="blueBallContainer"></div></div>
-                <div class="pipe"></div>
-                <div class="drop-zone"><div class="drop-ball blue-ball" id="blueDropBall"></div></div>
+            <div class="pipe"></div>
+            <div class="drop-zone">
+                <div class="drop-ball red-ball" id="redDropBall"></div>
             </div>
         </div>
     </div>
-    <div class="result-board">
-        <div class="result-title">当前开奖结果（按出球顺序）</div>
-        <div class="result-balls" id="resultBalls"></div>
-    </div>
-    <button class="btn" id="startBtn" onclick="startDraw()">开始摇奖</button>
-    <div class="history-panel">
-        <div class="history-title">历史开奖记录</div>
-        <div class="history-list" id="historyList">
-            <div style="text-align:center;color:#777;font-size:13px;padding:16px;" class="empty-tip">暂无记录，快去摇奖吧</div>
+
+    <div class="machine">
+        <div class="machine-title">后区</div>
+        <div class="drum-wrap">
+            <div class="drum" id="blueDrum">
+                <div class="ball-layer" id="blueBallLayer"></div>
+            </div>
+            <div class="pipe"></div>
+            <div class="drop-zone">
+                <div class="drop-ball blue-ball" id="blueDropBall"></div>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        const pad = n => String(n).padStart(2, "0");
-        function cryptoRand(max) {
-            const arr = new Uint32Array(1);
-            window.crypto.getRandomValues(arr);
-            return Math.floor((arr[0] / (0xffffffff + 1)) * max) + 1;
-        }
-        function pickOne(exist, max) {
-            let num;
-            do { num = cryptoRand(max); } while (exist.includes(num));
-            return num;
-        }
+<div class="result-board">
+    <div class="result-title">当前开奖结果（按出球顺序）</div>
+    <div class="result-balls" id="resultBalls"></div>
+</div>
 
-        function createMiniBalls(containerId, maxNum, count, isBlue) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = "";
-            for (let i = 0; i < count; i++) {
-                const ball = document.createElement("div");
-                ball.className = "mini-ball " + (isBlue ? "blue-ball" : "red-ball");
-                const num = cryptoRand(maxNum);
-                ball.textContent = pad(num);
-                ball.dataset.num = num;
-                const angle = (360 / count) * i;
-                ball.style.left = "50%";
-                ball.style.top = "50%";
-                ball.style.transform = `rotate(${angle}deg) translateY(-32px)`;
-                container.appendChild(ball);
-            }
-        }
-        function initDrums() {
-            createMiniBalls("redBallContainer", 35, 13, false);
-            createMiniBalls("blueBallContainer", 12, 9, true);
-        }
+<button class="btn" id="startBtn" onclick="startDraw()">开始摇奖</button>
 
-        let audioCtx = null, rumbleNode = null;
-        function ensureAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === "suspended") audioCtx.resume();
-        }
-        function stopRumble() {
-            if(rumbleNode){
-                try{ rumbleNode.stop(); }catch(e){}
-                rumbleNode.disconnect();
-                rumbleNode = null;
-            }
-        }
-        function startRumble() {
-            if(!audioCtx) return;
-            stopRumble();
-            rumbleNode = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            rumbleNode.type = "sine";
-            rumbleNode.frequency.value = 52 + cryptoRand(8);
-            g.gain.value = 0.06;
-            rumbleNode.connect(g);
-            g.connect(audioCtx.destination);
-            rumbleNode.start();
-        }
-        function playDropSound(isBlue) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = "sine";
-            osc.frequency.value = isBlue ? 820 : 720;
-            gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.11);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.12);
-        }
+<div class="history-panel">
+    <div class="history-title">历史开奖记录</div>
+    <div class="history-list" id="historyList">
+        <div style="text-align:center;color:#777;font-size:13px;padding:16px;" class="empty-tip">暂无记录，快去摇奖吧</div>
+    </div>
+</div>
 
-        let issueSerial = 1;
-        function addHistory(reds, blues) {
-            const list = document.getElementById("historyList");
-            if(list.querySelector(".empty-tip")) list.innerHTML = "";
-            const item = document.createElement("div");
-            item.className = "history-item";
-            const now = new Date();
-            const timeStr = `${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            let htm = "";
-            [...reds].sort((a,b)=>a-b).forEach(n=>htm+=`<div class="h-ball red-ball">${pad(n)}</div>`);
-            [...blues].sort((a,b)=>a-b).forEach(n=>htm+=`<div class="h-ball blue-ball">${pad(n)}</div>`);
-            item.innerHTML = `<div class="history-info"><span>第 ${issueSerial++} 期</span><span>${timeStr}</span></div><div class="history-balls">${htm}</div>`;
-            list.prepend(item);
-        }
+<script>
+const pad = n => String(n).padStart(2, "0");
 
-        function runDrumShake(dom, runMs){
-            return new Promise(resolve=>{
-                const track = dom.querySelector(".ball-track");
-                track.style.transition = 'none';
-                const start = performance.now();
-                function tick(){
-                    const now = performance.now();
-                    const pass = now - start;
-                    if(pass >= runMs){
-                        track.style.transition = 'transform 1.2s cubic-bezier(0.25, 1, 0.5, 1)';
-                        const match = track.style.transform.match(/rotate\(([0-9\-.]+)deg\)/);
-                        const currentRot = match ? parseFloat(match[1]) : 0;
-                        track.style.transform = `rotate(${currentRot + 720}deg)`;
-                        track.ontransitionend = ()=>{
-                            track.ontransitionend = null;
-                            resolve();
-                        };
-                        return;
-                    }
-                    const t = pass / runMs;
-                    const baseRot = t * 1440;
-                    const jitter = Math.sin(pass/60) * (4 + cryptoRand(4));
-                    track.style.transform = `rotate(${baseRot + jitter}deg)`;
-                    requestAnimationFrame(tick);
-                }
-                tick();
-            })
-        }
+function cryptoRand(max) {
+    const arr = new Uint32Array(1);
+    window.crypto.getRandomValues(arr);
+    return Math.floor((arr[0] / (0xffffffff + 1)) * max) + 1;
+}
 
-        async function startDraw() {
-            ensureAudio();
-            const btn = document.getElementById("startBtn");
-            const redDrum = document.getElementById("redDrum");
-            const blueDrum = document.getElementById("blueDrum");
-            const resultBalls = document.getElementById("resultBalls");
-            const redDropBall = document.getElementById("redDropBall");
-            const blueDropBall = document.getElementById("blueDropBall");
+function pickOne(exist, max) {
+    let num;
+    do {
+        num = cryptoRand(max);
+    } while (exist.includes(num));
+    return num;
+}
 
-            btn.disabled = true;
-            btn.textContent = "摇奖中...";
-            resultBalls.innerHTML = "";
-            initDrums();
+// 每颗球独立运动状态
+function createMiniBalls(layerId, maxNum, count, isBlue) {
+    const layer = document.getElementById(layerId);
+    layer.innerHTML = "";
 
-            const redResult = [];
-            const blueResult = [];
+    const balls = [];
 
-            startRumble();
-            await runDrumShake(redDrum, 2400 + cryptoRand(1200));
+    for (let i = 0; i < count; i++) {
+        const ball = document.createElement("div");
+        ball.className = "mini-ball " + (isBlue ? "blue-ball" : "red-ball");
+        const num = cryptoRand(maxNum);
+        ball.textContent = pad(num);
+        ball.dataset.num = num;
 
-            for(let i=0;i<5;i++){
-                const n = pickOne(redResult,35);
-                redResult.push(n);
-                const innerBalls = Array.from(document.getElementById("redBallContainer").children);
-                const matchBall = innerBalls.find(b=>Number(b.dataset.num)===n);
-                if(matchBall){
-                    matchBall.style.opacity = "0";
-                    matchBall.style.transform += " scale(0)";
-                    setTimeout(()=>matchBall.remove(),400);
-                }
-                redDropBall.textContent = pad(n);
-                redDropBall.classList.remove("dropping"); void redDropBall.offsetWidth;
-                redDropBall.classList.add("dropping");
-                playDropSound(false);
-                setTimeout(()=>{
-                    const b = document.createElement("div");
-                    b.className = "result-ball red-ball show";
-                    b.textContent = pad(n);
-                    resultBalls.appendChild(b);
-                },320);
-                await new Promise(r=>setTimeout(r, 820 + cryptoRand(650)));
+        layer.appendChild(ball);
+
+        balls.push({
+            el: ball,
+            x: 50 + (Math.random() - 0.5) * 40,
+            y: 50 + (Math.random() - 0.5) * 40,
+            vx: (Math.random() - 0.5) * 0.6,
+            vy: (Math.random() - 0.5) * 0.6,
+            size: 20
+        });
+    }
+
+    return balls;
+}
+
+// 无序翻滚核心：每个球自己更新位置
+function startChaosRoll(balls) {
+    let rafId = null;
+    let lastTime = performance.now();
+
+    function step(now) {
+        const dt = Math.min(50, now - lastTime);
+        lastTime = now;
+
+        balls.forEach(b => {
+            // 随机扰动方向，模拟气流碰撞
+            b.vx += (Math.random() - 0.5) * 0.08;
+            b.vy += (Math.random() - 0.5) * 0.08;
+
+            // 速度上限
+            const speed = Math.hypot(b.vx, b.vy);
+            if (speed > 1.1) {
+                b.vx = (b.vx / speed) * 1.1;
+                b.vy = (b.vy / speed) * 1.1;
             }
 
-            await new Promise(r=>setTimeout(r, 420 + cryptoRand(250)));
-            await runDrumShake(blueDrum, 1800 + cryptoRand(1000));
-
-            for(let i=0;i<2;i++){
-                const n = pickOne(blueResult,12);
-                blueResult.push(n);
-                const innerBalls = Array.from(document.getElementById("blueBallContainer").children);
-                const matchBall = innerBalls.find(b=>Number(b.dataset.num)===n);
-                if(matchBall){
-                    matchBall.style.opacity = "0";
-                    matchBall.style.transform += " scale(0)";
-                    setTimeout(()=>matchBall.remove(),400);
-                }
-                blueDropBall.textContent = pad(n);
-                blueDropBall.classList.remove("dropping"); void blueDropBall.offsetWidth;
-                blueDropBall.classList.add("dropping");
-                playDropSound(true);
-                setTimeout(()=>{
-                    const b = document.createElement("div");
-                    b.className = "result-ball blue-ball show";
-                    b.textContent = pad(n);
-                    resultBalls.appendChild(b);
-                },320);
-                await new Promise(r=>setTimeout(r, 780 + cryptoRand(580)));
+            // 低频随机加速，模拟突然跳动
+            if (Math.random() < 0.04) {
+                b.vx += (Math.random() - 0.5) * 0.4;
+                b.vy += (Math.random() - 0.5) * 0.4;
             }
 
-            stopRumble();
-            addHistory(redResult,blueResult);
-            btn.disabled = false;
-            btn.textContent = "再摇一次";
+            b.x += b.vx;
+            b.y += b.vy;
+
+            // 边界反弹
+            const r = 12;
+            if (b.x < r) { b.x = r; b.vx = Math.abs(b.vx); }
+            if (b.x > 100 - r) { b.x = 100 - r; b.vx = -Math.abs(b.vx); }
+            if (b.y < r) { b.y = r; b.vy = Math.abs(b.vy); }
+            if (b.y > 100 - r) { b.y = 100 - r; b.vy = -Math.abs(b.vy); }
+
+            b.el.style.left = b.x + "%";
+            b.el.style.top = b.y + "%";
+        });
+
+        rafId = requestAnimationFrame(step);
+    }
+
+    rafId = requestAnimationFrame(step);
+
+    return () => cancelAnimationFrame(rafId);
+}
+
+// 音频
+let audioCtx = null, rumbleNode = null;
+function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+}
+function stopRumble() {
+    if (rumbleNode) {
+        try { rumbleNode.stop(); } catch (e) {}
+        rumbleNode.disconnect();
+        rumbleNode = null;
+    }
+}
+function startRumble() {
+    if (!audioCtx) return;
+    stopRumble();
+    rumbleNode = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    rumbleNode.type = "sine";
+    rumbleNode.frequency.value = 52 + cryptoRand(8);
+    g.gain.value = 0.06;
+    rumbleNode.connect(g);
+    g.connect(audioCtx.destination);
+    rumbleNode.start();
+}
+function playDropSound(isBlue) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = isBlue ? 820 : 720;
+    gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.11);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.12);
+}
+
+// 历史记录
+let issueSerial = 1;
+function addHistory(reds, blues) {
+    const list = document.getElementById("historyList");
+    if (list.querySelector(".empty-tip")) list.innerHTML = "";
+    const item = document.createElement("div");
+    item.className = "history-item";
+    const now = new Date();
+    const timeStr = `${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    let htm = "";
+    [...reds].sort((a,b)=>a-b).forEach(n=>htm+=`<div class="h-ball red-ball">${pad(n)}</div>`);
+    [...blues].sort((a,b)=>a-b).forEach(n=>htm+=`<div class="h-ball blue-ball">${pad(n)}</div>`);
+    item.innerHTML = `<div class="history-info"><span>第 ${issueSerial++} 期</span><span>${timeStr}</span></div><div class="history-balls">${htm}</div>`;
+    list.prepend(item);
+}
+
+async function startDraw() {
+    ensureAudio();
+
+    const btn = document.getElementById("startBtn");
+    const resultBalls = document.getElementById("resultBalls");
+    const redDropBall = document.getElementById("redDropBall");
+    const blueDropBall = document.getElementById("blueDropBall");
+
+    btn.disabled = true;
+    btn.textContent = "摇奖中...";
+    resultBalls.innerHTML = "";
+
+    // 初始化前后区小球
+    const redBalls = createMiniBalls("redBallLayer", 35, 13, false);
+    const blueBalls = createMiniBalls("blueBallLayer", 12, 9, true);
+
+    // 前后区同时开始无序翻滚
+    const stopRed = startChaosRoll(redBalls);
+    const stopBlue = startChaosRoll(blueBalls);
+
+    startRumble();
+
+    const redResult = [];
+    const blueResult = [];
+
+    // 前区一颗一颗滚出
+    for (let i = 0; i < 5; i++) {
+        const n = pickOne(redResult, 35);
+        redResult.push(n);
+
+        // 找到对应球并消失
+        const match = redBalls.find(b => Number(b.el.dataset.num) === n);
+        if (match) {
+            match.el.style.transition = "opacity 0.35s, transform 0.35s";
+            match.el.style.opacity = "0";
+            match.el.style.transform = "scale(0.3)";
+            setTimeout(() => {
+                match.el.remove();
+                const idx = redBalls.indexOf(match);
+                if (idx > -1) redBalls.splice(idx, 1);
+            }, 350);
         }
-        initDrums();
-    </script>
+
+        redDropBall.textContent = pad(n);
+        redDropBall.classList.remove("dropping");
+        void redDropBall.offsetWidth;
+        redDropBall.classList.add("dropping");
+
+        playDropSound(false);
+
+        setTimeout(() => {
+            const b = document.createElement("div");
+            b.className = "result-ball red-ball show";
+            b.textContent = pad(n);
+            resultBalls.appendChild(b);
+        }, 320);
+
+        await new Promise(r => setTimeout(r, 850 + cryptoRand(600)));
+    }
+
+    // 后区一颗一颗滚出
+    for (let i = 0; i < 2; i++) {
+        const n = pickOne(blueResult, 12);
+        blueResult.push(n);
+
+        const match = blueBalls.find(b => Number(b.el.dataset.num) === n);
+        if (match) {
+            match.el.style.transition = "opacity 0.35s, transform 0.35s";
+            match.el.style.opacity = "0";
+            match.el.style.transform = "scale(0.3)";
+            setTimeout(() => {
+                match.el.remove();
+                const idx = blueBalls.indexOf(match);
+                if (idx > -1) blueBalls.splice(idx, 1);
+            }, 350);
+        }
+
+        blueDropBall.textContent = pad(n);
+        blueDropBall.classList.remove("dropping");
+        void blueDropBall.offsetWidth;
+        blueDropBall.classList.add("dropping");
+
+        playDropSound(true);
+
+        setTimeout(() => {
+            const b = document.createElement("div");
+            b.className = "result-ball blue-ball show";
+            b.textContent = pad(n);
+            resultBalls.appendChild(b);
+        }, 320);
+
+        await new Promise(r => setTimeout(r, 800 + cryptoRand(550)));
+    }
+
+    // 全部出完后停止翻滚
+    stopRed();
+    stopBlue();
+    stopRumble();
+
+    addHistory(redResult, blueResult);
+
+    btn.disabled = false;
+    btn.textContent = "再摇一次";
+}
+</script>
 </body>
 </html>

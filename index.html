@@ -1,11 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大乐透模拟摇奖</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:#080c18;color:#fff;font-family:system-ui;display:flex;flex-direction:column;align-items:center;padding:20px 12px 40px}
+.top-bar{width:100%;max-width:440px;display:flex;gap:40px;justify-content:center;margin-bottom:16px}
+.tag{width:140px;text-align:center;padding:7px;border-radius:99px;border:1px solid rgba(255,215,0,.35);color:#ffd86b;background:rgba(255,255,255,.06);font-size:13px}
+.machine-row{width:100%;max-width:440px;display:flex;gap:40px;justify-content:center;position:relative;margin-bottom:0px}
+.single-box{width:140px;display:flex;flex-direction:column;align-items:center;position:relative}
+.title{color:#ffd86b;margin-bottom:8px;font-size:14px;letter-spacing:2px}
+.drum-wrap{width:120px;height:120px;position:relative}
+.drum{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.14),transparent 35%),#141c30;border:2px solid rgba(255,255,255,.22);overflow:hidden;position:relative}
+.ball-layer{position:absolute;inset:0}
+.mini-ball{position:absolute;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:#fff;will-change:transform}
+.mini-ball.red{background:radial-gradient(circle at 30% 30%,#ff6b6b,#c02c2c)}
+.mini-ball.blue{background:radial-gradient(circle at 30% 30%,#42a5f5,#1565c0)}
+/* 透明管道 */
+.tube{position:absolute;top:116px;width:8px;height:70px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);border-radius:4px;z-index:5}
+.tube-left{left:56px}
+.tube-right{right:56px}
+/* 中间落球方框，内部左右分区 */
+.collect-box{width:240px;height:76px;border:2px solid rgba(255,215,0,0.4);border-radius:12px;background:rgba(255,255,255,0.04);margin:-10px auto 20px;display:flex;position:relative;overflow:hidden}
+.collect-left{width:55%;height:100%;display:flex;justify-content:center;align-items:center;gap:8px;padding:0 6px}
+.collect-right{flex:1;height:100%;display:flex;justify-content:center;align-items:center;gap:8px;padding:0 6px;border-left:1px dashed rgba(255,255,255,0.2)}
+.collect-ball{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;animation:rollIn 0.6s ease-out}
+@keyframes rollIn{0%{transform:translateY(-40px) scale(0.5);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
+/* 最终结果展示区 */
+.result-panel{width:100%;max-width:420px;border:1px solid rgba(255,215,0,.25);border-radius:20px;padding:16px;margin-bottom:18px;background:rgba(255,255,255,.04)}
+.result-title{text-align:center;color:#ffd86b;margin-bottom:12px;font-size:13px;letter-spacing:2px}
+.result-line{display:flex;justify-content:center;gap:10px;min-height:46px;flex-wrap:wrap;margin-bottom:8px}
+.label-sub{font-size:12px;color:#aaa;text-align:center;margin:4px 0}
+.out-ball{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;opacity:0;transform:scale(0.4);animation:pop 0.4s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes pop{to{opacity:1;transform:scale(1)}}
+.btn{width:100%;max-width:420px;padding:14px;border:none;border-radius:99px;font-size:18px;letter-spacing:5px;font-weight:bold;color:#fff;background:linear-gradient(90deg,#ff9500,#ff2d55,#ff9500);background-size:200% 100%;cursor:pointer}
+.btn:disabled{background:#444;cursor:default}
+.history{width:100%;max-width:420px;margin-top:22px}
+.h-title{color:#ffd86b;font-size:14px;border-left:4px solid #ffd86b;padding-left:10px;margin-bottom:10px}
+.h-item{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:8px;background:rgba(255,255,255,.04)}
+.h-top{display:flex;justify-content:space-between;font-size:12px;color:#b0bed9;margin-bottom:8px}
+.h-row{display:flex;gap:7px;flex-wrap:wrap}
+.h-ball{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:#fff}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <div class="tag">前区 1‑35</div>
+  <div class="tag">后区 1‑12</div>
+</div>
+
+<div class="machine-row">
+  <div class="single-box">
+    <div class="title">前区</div>
+    <div class="drum-wrap">
+      <div class="drum" id="redDrum">
+        <div class="ball-layer" id="redLayer"></div>
+      </div>
+      <div class="tube tube-left"></div>
+    </div>
+  </div>
+  <div class="single-box">
+    <div class="title">后区</div>
+    <div class="drum-wrap">
+      <div class="drum" id="blueDrum">
+        <div class="ball-layer" id="blueLayer"></div>
+      </div>
+      <div class="tube tube-right"></div>
+    </div>
+  </div>
+</div>
+
+<div class="collect-box" id="collectBox">
+  <div class="collect-left" id="collectLeft"></div>
+  <div class="collect-right" id="collectRight"></div>
+</div>
+
+<div class="result-panel">
+  <div class="result-title">开奖号码</div>
+  <div class="label-sub">前区红球</div>
+  <div class="result-line" id="redResultLine"></div>
+  <div class="label-sub">后区蓝球</div>
+  <div class="result-line" id="blueResultLine"></div>
+</div>
+
+<button class="btn" id="runBtn">开始摇奖</button>
+
+<div class="history">
+  <div class="h-title">历史记录</div>
+  <div id="histWrap"></div>
+</div>
+
+<script>
+const pad=n=>String(n).padStart(2,"0");
+
+// 密码学真随机，无修改
 const cryptoRand=(max)=>{
   const arr=new Uint32Array(1);
   crypto.getRandomValues(arr);
   return Math.floor(arr[0]/(0xFFFFFFFF+1)*max)+1;
 };
+
 const pickRandom=(arr)=>{
   const idx=cryptoRand(arr.length)-1;
   const item=arr[idx];
   arr.splice(idx,1);
   return item;
 };
+
+function createBall(layerId,num,isRed){
+  const l=document.getElementById(layerId);
+  const b=document.createElement("div");
+  b.className="mini-ball "+(isRed?"red":"blue");
+  b.textContent=pad(num);
+  l.appendChild(b);
+  return {el:b,num,angle:cryptoRand(628)/100,radius:18+(num%5)};
+}
+
+// 滚筒旋转，转速0.028，无额外物理特效
+function rollLoop(list){
+  let alive=true;
+  const f=()=>{
+    if(!alive) return;
+    for(const b of list){
+      const speed=0.028+b.num*0.0005;
+      b.angle+=speed;
+      const cx=50,cy=50;
+      let x=cx+Math.cos(b.angle)*b.radius;
+      let y=cy+Math.sin(b.angle)*b.radius;
+      x+=(Math.random()-0.5)*0.4;
+      y+=(Math.random()-0.5)*0.4;
+      const edge=10;
+      if(x<edge)x=edge;
+      if(x>100-edge)x=100-edge;
+      if(y<edge)y=edge;
+      if(y>100-edge)y=100-edge;
+      b.el.style.left=x+"%";
+      b.el.style.top=y+"%";
+    }
+    requestAnimationFrame(f);
+  };
+  requestAnimationFrame(f);
+  return ()=>alive=false;
+}
+
+let audioCtx=null;
+function initAudio(){if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)}
+function playDropTone(isRed){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  o.type="sine";
+  o.frequency.setValueAtTime(isRed?510:680,audioCtx.currentTime);
+  g.gain.setValueAtTime(0.28,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.28);
+  o.connect(g);g.connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+0.28);
+}
+
+let serial=1;
+function saveHis(r,b){
+  const w=document.getElementById("histWrap");
+  const d=new Date();
+  const t=`${d.getMonth()+1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const div=document.createElement("div");
+  div.className="h-item";
+  div.innerHTML=`<div class="h-top"><span>第${serial++}期</span><span>${t}</span></div><div class="h-row">${[...r,...b].map(x=>`<div class="h-ball ${x<=35?'red':'blue'}">${pad(x)}</div>`).join("")}</div>`;
+  w.prepend(div);
+}
+
+async function draw(){
+  initAudio();
+  const collectLeft=document.getElementById("collectLeft");
+  const collectRight=document.getElementById("redResultLine");
+  const redLine=document.getElementById("redResultLine");
+  const blueLine=document.getElementById("blueResultLine");
+  collectLeft.innerHTML="";
+  collectRight.innerHTML="";
+  redLine.innerHTML="";
+  blueLine.innerHTML="";
+  const btn=document.getElementById("runBtn");
+  btn.disabled=true;btn.textContent="摇奖中…";
+  document.getElementById("redLayer").innerHTML="";
+  document.getElementById("blueLayer").innerHTML="";
+
+  const redPool=[];
+  for(let i=1;i<=35;i++) redPool.push(createBall("redLayer",i,true));
+  const bluePool=[];
+  for(let i=1;i<=12;i++) bluePool.push(createBall("blueLayer",i,false));
+
+  const stopRed=rollLoop(redPool);
+  const resR=[];
+  for(let i=0;i<5;i++){
+    const hit=pickRandom(redPool);
+    hit.el.style.opacity=0;
+    resR.push(hit.num);
+    playDropTone(true);
+    const cBall=document.createElement("div");
+    cBall.className="collect-ball red";
+    cBall.textContent=pad(hit.num);
+    collectLeft.appendChild(cBall);
+    const outB=document.createElement("div");
+    outB.className="out-ball red";
+    outB.textContent=pad(hit.num);
+    redLine.appendChild(outB);
+    await new Promise(x=>setTimeout(x,1100+cryptoRand(200)));
+  }
+  stopRed();
+
+  const stopBlue=rollLoop(bluePool);
+  const resB=[];
+  for(let i=0;i<2;i++){
+    const hit=pickRandom(bluePool);
+    hit.el.style.opacity=0;
+    resB.push(hit.num);
+    playDropTone(false);
+    const cBall=document.createElement("div");
+    cBall.className="collect-ball blue";
+    cBall.textContent=pad(hit.num);
+    collectRight.appendChild(cBall);
+    const outB=document.createElement("div");
+    outB.className="out-ball blue";
+    outB.textContent=pad(hit.num);
+    blueLine.appendChild(outB);
+    await new Promise(x=>setTimeout(x,1100+cryptoRand(200)));
+  }
+  stopBlue();
+
+  document.getElementById("redLayer").innerHTML="";
+  document.getElementById("blueLayer").innerHTML="";
+  saveHis(resR,resB);
+  btn.disabled=false;btn.textContent="开始摇奖";
+}
+document.getElementById("runBtn").onclick=draw;
+</script>
+</body>
+</html>

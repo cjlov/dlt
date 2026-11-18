@@ -2,155 +2,203 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>大乐透模拟摇奖｜娱乐版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大乐透模拟摇奖｜带记录</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui, sans-serif}
-body{background:#111;color:#fff;padding:20px}
+body{background:#111;color:#fff;padding:16px}
 .box{max-width:820px;margin:0 auto}
-.ballWrap{display:flex;gap:12px;align-items:center;margin:24px 0;min-height:80px}
-.ball{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:bold;font-size:18px}
+.ballWrap{display:flex;gap:10px;align-items:center;margin:20px 0;min-height:76px;flex-wrap:wrap}
+.ball{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:bold;font-size:16px;opacity:0;transform:scale(0.3);animation:popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards}
+.ball.pop-done{animation:none;opacity:1;transform:scale(1)}
+@keyframes popIn{to{opacity:1;transform:scale(1)}}
 .front{background:#e63946}
 .back{background:#457b9d}
-button{padding:12px 26px;font-size:16px;border:none;border-radius:8px;background:#2a9d8f;color:#fff;cursor:pointer;margin-right:10px}
-#stat{margin-top:24px;padding:16px;border:1px solid #444;border-radius:10px;font-size:12px;line-height:1.7}
-.info{margin:12px 0;color:#aaa;font-size:14px}
-.prize{margin-top:16px;padding:12px;border:1px solid #333;border-radius:8px;color:#ffd166}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+button{padding:10px 18px;font-size:15px;border:none;border-radius:8px;background:#2a9d8f;color:#fff;cursor:pointer}
+button:disabled{background:#555;cursor:not-allowed}
+.info{margin:10px 0;color:#aaa;font-size:14px}
+#statusInfo{color:#ffd166;min-height:20px}
+#resultText{font-weight:bold;color:#e2e2e2;margin:10px 0}
+#stat{margin-top:20px;padding:14px;border:1px solid #444;border-radius:10px}
+.stat-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:12px}
+.stat-item{padding:2px 4px;text-align:center;background:#222;border-radius:4px;color:#ffd166}
+.record-wrap{margin-top:20px;padding:14px;border:1px solid #444;border-radius:10px}
+.record-item{padding:6px 0;border-bottom:1px solid #333;font-size:14px}
+.record-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+#clearRecordBtn{background:#e63946}
 </style>
 </head>
 <body>
 <div class="box">
-  <h2>大乐透模拟摇奖（娱乐专用）</h2>
-  <div class="info">⚠️ 模拟器，和真实开奖无任何关联，无法预测开奖结果</div>
-  <button onclick="startRoll()">开始摇奖</button>
-  <button onclick="resetStat()">清空统计</button>
+  <h2>大乐透模拟摇奖｜带记录</h2>
+  <div class="info">⚠️ 模拟器仅娱乐，和官方开奖无关，不能预测号码</div>
+
+  <div class="ctrl">
+    <button id="rollBtn" onclick="startRoll()">开始摇奖</button>
+    <button id="resetBtn" onclick="resetStat()">清空频次统计</button>
+  </div>
+
+  <div id="statusInfo"></div>
   <div class="ballWrap" id="ballBox"></div>
   <div id="resultText"></div>
-  <div class="prize" id="prizeText"></div>
+
+  <div class="record-wrap">
+    <div class="record-title">
+      <h3>摇奖记录</h3>
+      <button id="clearRecordBtn" onclick="clearAllRecord()">清空记录</button>
+    </div>
+    <div id="recordList"></div>
+  </div>
+
   <div id="stat">
-    <div>前区频次统计：</div>
-    <div id="frontStat"></div>
+    <h3 style="margin-bottom:8px">前区频次统计</h3>
+    <div class="stat-grid" id="statGrid"></div>
   </div>
 </div>
 
 <script>
-// 频次记录
 let frontCount = Array(36).fill(0);
+let isRolling = false;
+let audioCtx;
 
-// 密码学安全随机
+// 读取本地存储记录
+let rollRecord = JSON.parse(localStorage.getItem("dltRecord")) || [];
+
+function playPopSound() {
+  try {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+  }catch(e){}
+}
+
 function secureRandom(min, max) {
   const u32 = new Uint32Array(1);
-  window.crypto.getRandomValues(u32);
+  crypto.getRandomValues(u32);
   const r = u32[0] / (0xFFFFFFFF + 1);
   return Math.floor(r * (max - min + 1)) + min;
 }
 
-// 获取原始乱序号码（不排序）
-function getFrontRaw(){
-  let arr = [];
-  while(arr.length <5){
-    let n = secureRandom(1,35);
+function getFront() {
+  const arr = [];
+  while(arr.length < 5) {
+    const n = secureRandom(1,35);
     if(!arr.includes(n)) arr.push(n);
   }
-  return arr;
+  return arr.sort((a,b)=>a-b);
 }
-function getBackRaw(){
-  let arr = [];
-  while(arr.length <2){
-    let n = secureRandom(1,12);
+function getBack() {
+  const arr = [];
+  while(arr.length < 2) {
+    const n = secureRandom(1,12);
     if(!arr.includes(n)) arr.push(n);
   }
-  return arr;
-}
-function sortArr(a){
-  return [...a].sort((x,y)=>x-y);
+  return arr.sort((a,b)=>a-b);
 }
 
-// 更新统计面板
-function updateStat(arr){
-  arr.forEach(v=>frontCount[v]++);
-  let s = "";
+function renderStat() {
+  let html = "";
   for(let i=1;i<=35;i++){
-    s += i+":"+frontCount[i]+"  ";
+    html += `<div class="stat-item">${i}:${frontCount[i]}</div>`
   }
-  document.getElementById("frontStat").innerText = s;
+  document.getElementById("statGrid").innerHTML = html;
 }
-function resetStat(){
+
+function renderRecord() {
+  let html = "";
+  rollRecord.forEach((item,idx)=>{
+    html += `<div class="record-item">第${idx+1}组：前区 ${item.front.join(" ")}｜后区 ${item.back.join(" ")}</div>`
+  })
+  document.getElementById("recordList").innerHTML = html;
+  localStorage.setItem("dltRecord", JSON.stringify(rollRecord));
+}
+
+function resetStat() {
+  if(isRolling) return;
   frontCount = Array(36).fill(0);
-  document.getElementById("frontStat").innerText = "";
-  document.getElementById("ballBox").innerHTML = "";
-  document.getElementById("resultText").innerText = "";
-  document.getElementById("prizeText").innerText = "";
+  renderStat();
 }
 
-// 奖级判定（官方9档）
-function checkPrize(winFront, winBack, userFront, userBack){
-  const matchFront = winFront.filter(x=>userFront.includes(x)).length;
-  const matchBack = winBack.filter(x=>userBack.includes(x)).length;
-  if(matchFront===5 && matchBack===2) return "一等奖（浮动奖）";
-  if(matchFront===5 && matchBack===1) return "二等奖（浮动奖）";
-  if(matchFront===5 && matchBack===0) return "三等奖（浮动奖）";
-  if(matchFront===4 && matchBack===2) return "四等奖 3000元";
-  if(matchFront===4 && matchBack===1) return "五等奖 200元";
-  if(matchFront===3 && matchBack===2) return "六等奖 100元";
-  if(matchFront===4 && matchBack===0) return "七等奖 10元";
-  if((matchFront===3 && matchBack===1) || (matchFront===2 && matchBack===2)) return "八等奖 5元";
-  if((matchFront===3 && matchBack===0) || (matchFront===2 && matchBack===1) || (matchFront===1 && matchBack===2)) return "九等奖 2元";
-  return "未中奖";
+function clearAllRecord() {
+  rollRecord = [];
+  localStorage.removeItem("dltRecord");
+  renderRecord();
 }
 
-// 摇奖动画
-async function startRoll(){
+async function startRoll() {
+  if(isRolling) return;
+  isRolling = true;
+  document.getElementById("rollBtn").disabled = true;
   const box = document.getElementById("ballBox");
   box.innerHTML = "";
   document.getElementById("resultText").innerText = "";
-  document.getElementById("prizeText").innerText = "";
+  document.getElementById("statusInfo").innerText = "正在摇出号码...";
 
-  // 拿到乱序原始开奖号码
-  const rawFront = getFrontRaw();
-  const rawBack = getBackRaw();
+  const frontRaw = getFront();
+  const backRaw = getBack();
+  const allRaw = [...frontRaw, ...backRaw];
 
-  // 小球逐个乱序落下
-  for(let num of rawFront){
-    const b = document.createElement("div");
-    b.className = "ball front";
-    b.innerText = num.toString().padStart(2,"0");
-    box.appendChild(b);
-    await sleep(220);
-  }
-  for(let num of rawBack){
-    const b = document.createElement("div");
-    b.className = "ball back";
-    b.innerText = num.toString().padStart(2,"0");
-    box.appendChild(b);
-    await sleep(220);
+  // 逐个出球
+  for(const num of allRaw) {
+    playPopSound();
+    const div = document.createElement("div");
+    div.className = num <=35 ? "ball front" : "ball back";
+    div.innerText = String(num).padStart(2,"0");
+    div.dataset.num = num;
+    box.appendChild(div);
+    await sleep(250);
   }
 
-  // 全部落完，再排序展示最终开奖号
-  const sortedFront = sortArr(rawFront);
-  const sortedBack = sortArr(rawBack);
+  await sleep(600);
+  // 打上pop-done，关闭动画冲突
+  box.querySelectorAll(".ball").forEach(b=>b.classList.add("pop-done"));
+  document.getElementById("statusInfo").innerText = "正在排序...";
+  await sleep(300);
+
+  const sortedFront = [...frontRaw].sort((a,b)=>a-b);
+  const sortedBack = [...backRaw].sort((a,b)=>a-b);
+  const sortedAll = [...sortedFront, ...sortedBack];
+
+  const balls = Array.from(box.querySelectorAll(".ball"));
+  const rects = balls.map(b=>b.getBoundingClientRect());
   box.innerHTML = "";
-  for(let n of sortedFront){
-    const b = document.createElement("div");
-    b.className = "ball front";
-    b.innerText = n.toString().padStart(2,"0");
-    box.appendChild(b);
-  }
-  for(let n of sortedBack){
-    const b = document.createElement("div");
-    b.className = "ball back";
-    b.innerText = n.toString().padStart(2,"0");
-    box.appendChild(b);
-  }
+  sortedAll.forEach(num=>{
+    const div = document.createElement("div");
+    div.className = num <=35 ? "ball front pop-done" : "ball back pop-done";
+    div.innerText = String(num).padStart(2,"0");
+    box.appendChild(div);
+  })
 
-  updateStat(sortedFront);
-  document.getElementById("resultText").innerText = `开奖号码：前区 ${sortedFront.join(" ")}｜后区 ${sortedBack.join(" ")}`;
-  // 这里可以改成你自己输入的号码，我先用开奖号自测演示
-  const prizeResult = checkPrize(sortedFront, sortedBack, sortedFront, sortedBack);
-  document.getElementById("prizeText").innerText = `模拟中奖判定：${prizeResult}`;
+  // 记录频次
+  sortedFront.forEach(n=>frontCount[n]++);
+  renderStat();
+
+  // 存入记录
+  rollRecord.push({front:sortedFront, back:sortedBack});
+  renderRecord();
+
+  document.getElementById("resultText").innerText = `开奖结果：前区 ${sortedFront.join(" ")} ｜后区 ${sortedBack.join(" ")}`;
+  document.getElementById("statusInfo").innerText = "";
+  isRolling = false;
+  document.getElementById("rollBtn").disabled = false;
 }
+
 function sleep(ms){
   return new Promise(resolve=>setTimeout(resolve,ms));
 }
+
+renderStat();
+renderRecord();
 </script>
 </body>
 </html>
